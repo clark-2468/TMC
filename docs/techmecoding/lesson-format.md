@@ -44,3 +44,7 @@ Version 1 stores illustrative frames supplied by the lesson author. Learning Mod
 The command requires a trusted workspace and a local desktop window. Trace playback in a lesson continues to show the recorded example, while terminal output comes from the saved file.
 
 For a live terminal trace, choose **TechMeCoding: Trace Saved Python File**. It reports which line is about to run and the local variables visible at that point. The trace covers the selected file and shows up to 200 events. The programme keeps running if it reaches that limit. Samples of strings are shortened, and collections are summarised by size.
+
+## Ask the AI tutor
+
+Configure an OpenAI model in **Manage Language Models**, then choose **Ask Tutor** on any lesson step. Enter a question and review the request before sending it. The tutor receives the question, the step title and its instructions. Sharing your current Python draft is optional. Imported lessons and exercises remain available offline.

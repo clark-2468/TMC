@@ -24,6 +24,7 @@ import { IEditorService, SIDE_GROUP } from '../../../services/editor/common/edit
 import { Lesson } from './lesson.js';
 import { LessonExerciseState, renderLessonExercise } from './lessonExercise.js';
 import { renderLessonTrace } from './lessonTrace.js';
+import { LessonTutor } from './lessonTutor.js';
 import './media/lessonEditor.css';
 
 export class LessonEditorInput extends EditorInput {
@@ -58,6 +59,7 @@ export class LessonEditor extends EditorPane {
 
 	private readonly controls = this._register(new DisposableStore());
 	private root!: HTMLElement;
+	private readonly tutor: LessonTutor;
 
 	constructor(
 		group: IEditorGroup,
@@ -70,6 +72,7 @@ export class LessonEditor extends EditorPane {
 		@IEditorService private readonly editorService: IEditorService,
 	) {
 		super(LessonEditor.ID, group, telemetryService, themeService, storageService);
+		this.tutor = instantiationService.createInstance(LessonTutor);
 	}
 
 	protected override createEditor(parent: HTMLElement): void {
@@ -149,6 +152,7 @@ export class LessonEditor extends EditorPane {
 		}, {}));
 		const draft = input.getDraft(stepIndex, this.modelService, this.languageService);
 		editor.setModel(draft);
+		this.tutor.render(instructions, step, () => draft.getValue(), this.controls);
 
 		const actions = dom.append(code, dom.$('.tmc-navigation'));
 		const openDraft = dom.append(actions, dom.$('button', { type: 'button' }, localize('openPythonDraft', "Open Draft in Python Editor")));
