@@ -6,6 +6,8 @@
 import * as dom from '../../../../base/browser/dom.js';
 import { CancellationToken } from '../../../../base/common/cancellation.js';
 import { DisposableStore } from '../../../../base/common/lifecycle.js';
+import { URI } from '../../../../base/common/uri.js';
+import { generateUuid } from '../../../../base/common/uuid.js';
 import { CodeEditorWidget } from '../../../../editor/browser/widget/codeEditor/codeEditorWidget.js';
 import { ITextModel } from '../../../../editor/common/model.js';
 import { ILanguageService } from '../../../../editor/common/languages/language.js';
@@ -34,9 +36,10 @@ export class LessonEditorInput extends EditorInput {
 
 	stepIndex = 0;
 	readonly exercises = new Map<number, LessonExerciseState>();
+	private readonly draftId = generateUuid();
 	private readonly drafts = new Map<number, ITextModel>();
 
-	constructor(readonly lesson: Lesson) {
+	constructor(readonly lesson: Lesson, readonly recordedTrace = false) {
 		super();
 	}
 
@@ -47,7 +50,9 @@ export class LessonEditorInput extends EditorInput {
 	getDraft(index: number, modelService: IModelService, languageService: ILanguageService): ITextModel {
 		let draft = this.drafts.get(index);
 		if (!draft) {
-			draft = this._register(modelService.createModel(this.lesson.steps[index].code ?? '', languageService.createById('python')));
+			// Keep these lesson-owned models out of the workbench's in-memory document resolver.
+			const resource = URI.from({ scheme: 'tmc-lesson-draft', path: `/${this.draftId}/step-${index + 1}.py` });
+			draft = this._register(modelService.createModel(this.lesson.steps[index].code ?? '', languageService.createById('python'), resource, true));
 			this.drafts.set(index, draft);
 		}
 		return draft;
@@ -136,7 +141,7 @@ export class LessonEditor extends EditorPane {
 			renderLessonExercise(instructions, step.exercise, state, this.controls);
 		}
 		if (step.animation && step.code) {
-			renderLessonTrace(instructions, step.code, step.animation.frames, this.controls);
+			renderLessonTrace(instructions, step.code, step.animation.frames, this.controls, input.recordedTrace);
 		}
 
 		const code = dom.append(columns, dom.$('section'));
@@ -149,7 +154,7 @@ export class LessonEditor extends EditorPane {
 			automaticLayout: true,
 			minimap: { enabled: false },
 			scrollBeyondLastLine: false,
-		}, {}));
+		}, { isSimpleWidget: true }));
 		const draft = input.getDraft(stepIndex, this.modelService, this.languageService);
 		editor.setModel(draft);
 		this.tutor.render(instructions, step, () => draft.getValue(), this.controls);

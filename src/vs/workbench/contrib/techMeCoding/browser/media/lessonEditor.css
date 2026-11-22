@@ -87,3 +87,14 @@
 .tmc-lesson .tmc-exercise summary {
 	cursor: pointer;
 }
+
+.tmc-lesson .tmc-trace-variables {
+	padding-inline-start: 1.5em;
+}
+
+.tmc-lesson .tmc-variable-change {
+	display: inline-block;
+	margin-inline-start: 8px;
+	color: var(--vscode-descriptionForeground);
+	font-size: 0.9em;
+}

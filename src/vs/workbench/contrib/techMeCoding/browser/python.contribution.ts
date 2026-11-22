@@ -3,13 +3,17 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
+import { Event } from '../../../../base/common/event.js';
 import { Schemas } from '../../../../base/common/network.js';
 import { isWeb, isWindows } from '../../../../base/common/platform.js';
-import { dirname, extname } from '../../../../base/common/resources.js';
+import { basename, dirname, extname, joinPath } from '../../../../base/common/resources.js';
+import { URI } from '../../../../base/common/uri.js';
+import { generateUuid } from '../../../../base/common/uuid.js';
 import { localize, localize2 } from '../../../../nls.js';
 import { Action2, registerAction2 } from '../../../../platform/actions/common/actions.js';
 import { IsWebContext } from '../../../../platform/contextkey/common/contextkeys.js';
 import { IDialogService, IFileDialogService } from '../../../../platform/dialogs/common/dialogs.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
 import { ServicesAccessor } from '../../../../platform/instantiation/common/instantiation.js';
 import { INotificationService } from '../../../../platform/notification/common/notification.js';
 import { TerminalLocation } from '../../../../platform/terminal/common/terminal.js';
@@ -18,6 +22,8 @@ import { EditorResourceAccessor } from '../../../common/editor.js';
 import { IEditorService } from '../../../services/editor/common/editorService.js';
 import { IWorkbenchEnvironmentService } from '../../../services/environment/common/environmentService.js';
 import { ITerminalGroupService, ITerminalService } from '../../terminal/browser/terminal.js';
+import { LessonEditorInput } from './lessonEditor.js';
+import { readRecordedTrace } from './recordedPythonTrace.js';
 import { pythonTraceScript } from './pythonTrace.js';
 
 registerAction2(class extends Action2 {
@@ -58,6 +64,7 @@ async function runPythonFile(accessor: ServicesAccessor, trace: boolean): Promis
 	const notifications = accessor.get(INotificationService);
 	const fileDialog = accessor.get(IFileDialogService);
 	const dialog = accessor.get(IDialogService);
+	const fileService = accessor.get(IFileService);
 	const trust = accessor.get(IWorkspaceTrustManagementService);
 	const terminalService = accessor.get(ITerminalService);
 	const terminalGroupService = accessor.get(ITerminalGroupService);
@@ -109,18 +116,49 @@ async function runPythonFile(accessor: ServicesAccessor, trace: boolean): Promis
 		return;
 	}
 
-	const terminal = await terminalService.createTerminal({
-		location: TerminalLocation.Panel,
-		config: {
-			name: localize('pythonRunTerminal', "TMC Python"),
-			executable: interpreter.fsPath,
-			args: trace ? ['-u', '-c', pythonTraceScript, file.fsPath] : ['-u', file.fsPath],
-			cwd: dirname(file),
-			ignoreConfigurationCwd: true,
-			ignoreShellIntegration: true,
-			waitOnExit: true,
-		},
-	});
-	terminalGroupService.setActiveInstance(terminal);
-	await terminalGroupService.showPanel(true);
+	const traceFolder = trace ? joinPath(environment.cacheHome, 'tmc-python-traces') : undefined;
+	const traceFile = traceFolder?.scheme === Schemas.file && !traceFolder.fsPath.includes('${')
+		? joinPath(traceFolder, generateUuid() + '.json')
+		: undefined;
+	if (traceFile && traceFolder) {
+		await fileService.createFolder(traceFolder);
+	}
+	try {
+		const terminal = await terminalService.createTerminal({
+			location: TerminalLocation.Panel,
+			config: {
+				name: localize('pythonRunTerminal', "TMC Python"),
+				executable: interpreter.fsPath,
+				args: trace ? ['-u', '-I', '-c', pythonTraceScript, file.fsPath, ...(traceFile ? [traceFile.fsPath] : [])] : ['-u', file.fsPath],
+				cwd: dirname(file),
+				ignoreConfigurationCwd: true,
+				ignoreShellIntegration: true,
+				waitOnExit: true,
+			},
+		});
+		const exit = traceFile && terminal.exitReason === undefined && terminal.exitCode === undefined ? Event.toPromise(terminal.onExit) : undefined;
+		terminalGroupService.setActiveInstance(terminal);
+		await terminalGroupService.showPanel(true);
+		if (traceFile) {
+			await exit;
+			const recorded = await readTraceFile(fileService, traceFile, basename(file));
+			if (recorded) {
+				await editorService.openEditor(new LessonEditorInput(recorded, true), { pinned: true, preserveFocus: true });
+			}
+		}
+	} finally {
+		if (traceFile && await fileService.exists(traceFile)) {
+			await fileService.del(traceFile);
+		}
+	}
+}
+
+async function readTraceFile(fileService: IFileService, traceFile: URI, name: string) {
+	try {
+		const data = await fileService.readFile(traceFile, { limits: { size: 2 * 1024 * 1024 } });
+		return readRecordedTrace(JSON.parse(data.value.toString()), name);
+	} catch {
+		// A stopped run or one that failed before the first line may have no complete recording.
+		return undefined;
+	}
 }

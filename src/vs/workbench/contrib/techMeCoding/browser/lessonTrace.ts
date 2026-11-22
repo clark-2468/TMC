@@ -9,12 +9,16 @@ import { DisposableStore } from '../../../../base/common/lifecycle.js';
 import { localize } from '../../../../nls.js';
 import { LessonFrame } from './lesson.js';
 
-export function renderLessonTrace(parent: HTMLElement, code: string, frames: readonly LessonFrame[], store: DisposableStore): void {
+export function renderLessonTrace(parent: HTMLElement, code: string, frames: readonly LessonFrame[], store: DisposableStore, recorded: boolean): void {
 	const section = dom.append(parent, dom.$('section.tmc-trace'));
-	dom.append(section, dom.$('h3', undefined, localize('lessonExampleTrace', "Example execution trace")));
-	dom.append(section, dom.$('p', undefined, localize('lessonTraceSource', "The lesson author supplied this trace for the original example below.")));
+	dom.append(section, dom.$('h3', undefined, recorded
+		? localize('recordedExecutionTrace', "Recorded execution trace")
+		: localize('lessonExampleTrace', "Example execution trace")));
+	dom.append(section, dom.$('p', undefined, recorded
+		? localize('recordedTraceSource', "These frames were recorded while Python ran the saved code below. Programme output and errors are in the terminal.")
+		: localize('lessonTraceSource', "The lesson author supplied this trace for the original example below.")));
 	const source = dom.append(section, dom.$('ol.tmc-trace-lines', {
-		'aria-label': localize('lessonTraceCode', "Original Python example")
+		'aria-label': recorded ? localize('recordedTraceCode', "Recorded Python source") : localize('lessonTraceCode', "Original Python example")
 	}));
 	const lines = code.split(/\r\n|\r|\n/).map(text => {
 		const line = dom.append(source, dom.$('li'));
@@ -48,10 +52,24 @@ export function renderLessonTrace(parent: HTMLElement, code: string, frames: rea
 		dom.append(state, dom.$('p', undefined, localize('lessonFrameProgress', "Frame {0} of {1} · Line {2}", index + 1, frames.length, frame.line)));
 		dom.append(state, dom.$('p.tmc-text', undefined, frame.caption));
 		dom.append(state, dom.$('h4', undefined, localize('traceVariables', "Variables")));
-		if (frame.variables.length) {
-			const variables = dom.append(state, dom.$('ul'));
+		const previousValues = new Map(frames[index - 1]?.variables.map(({ name, value }) => [name, value]));
+		if (frame.variables.length || previousValues.size) {
+			const variables = dom.append(state, dom.$('ul.tmc-trace-variables'));
 			for (const { name, value } of frame.variables) {
-				dom.append(variables, dom.$('li.tmc-text', undefined, `${name} = ${value}`));
+				const previousValue = previousValues.get(name);
+				const row = dom.append(variables, dom.$('li.tmc-text'));
+				dom.append(row, dom.$('code', undefined, `${name} = ${value}`));
+				if (index > 0 && previousValue === undefined) {
+					dom.append(row, dom.$('span.tmc-variable-change', undefined, localize('traceVariableAppeared', "New in this frame")));
+				} else if (previousValue !== undefined && previousValue !== value) {
+					dom.append(row, dom.$('span.tmc-variable-change', undefined, localize('traceVariableChanged', "Previously {0}", previousValue)));
+				}
+				previousValues.delete(name);
+			}
+			for (const [name, value] of previousValues) {
+				const row = dom.append(variables, dom.$('li.tmc-text'));
+				dom.append(row, dom.$('code', undefined, `${name} = ${value}`));
+				dom.append(row, dom.$('span.tmc-variable-change', undefined, localize('traceVariableAbsent', "Absent in this frame")));
 			}
 		} else {
 			dom.append(state, dom.$('p', undefined, localize('traceNoVariables', "No variables recorded.")));

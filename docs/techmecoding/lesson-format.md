@@ -50,3 +50,5 @@ For a live terminal trace, choose **TechMeCoding: Trace Saved Python File**. It 
 Configure an OpenAI model in **Manage Language Models**, then choose **Ask Tutor** on any lesson step. Enter a question and review the request before sending it. The tutor receives the question, the step title and its instructions. Sharing your current Python draft is optional. Imported lessons and exercises remain available offline.
 
 To create a lesson in the app, run **TechMeCoding: Generate Python Lesson** from the Command Palette. Enter a topic and confirm that you want to send it to OpenAI. TMC checks the returned lesson against the version 1 format and opens it as JSON for review. Save it as a `.tmc.json` file and import it when you are ready.
+
+When a trace finishes, TMC also opens a playback tab for files up to 20,000 characters when at least one frame was recorded. Playback uses the saved source read by the trace runner. The terminal retains the programme's output and errors.
