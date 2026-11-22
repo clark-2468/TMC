@@ -18,6 +18,7 @@ import { ITextFileService } from '../../../services/textfile/common/textfiles.js
 import { parseLesson } from './lesson.js';
 import { LessonEditor, LessonEditorInput } from './lessonEditor.js';
 import './python.contribution.js';
+import './generateLesson.contribution.js';
 
 Registry.as<IEditorPaneRegistry>(EditorExtensions.EditorPane).registerEditorPane(
 	EditorPaneDescriptor.create(LessonEditor, LessonEditor.ID, localize('learningMode', "TechMeCoding Learning Mode")),

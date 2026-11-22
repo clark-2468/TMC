@@ -20,7 +20,7 @@ Copy this prompt and replace the final line with your question.
 >
 > Learner’s question: [INSERT QUESTION]
 
-See [the variables example](python-variables.tmc.json) for a complete file.
+Try the [variables](python-variables.tmc.json), [running total](variables-and-loop.tmc.json), and [functions and decisions](functions-and-decisions.tmc.json) examples.
 
 ## Teaching animation design
 
@@ -48,3 +48,5 @@ For a live terminal trace, choose **TechMeCoding: Trace Saved Python File**. It 
 ## Ask the AI tutor
 
 Configure an OpenAI model in **Manage Language Models**, then choose **Ask Tutor** on any lesson step. Enter a question and review the request before sending it. The tutor receives the question, the step title and its instructions. Sharing your current Python draft is optional. Imported lessons and exercises remain available offline.
+
+To create a lesson in the app, run **TechMeCoding: Generate Python Lesson** from the Command Palette. Enter a topic and confirm that you want to send it to OpenAI. TMC checks the returned lesson against the version 1 format and opens it as JSON for review. Save it as a `.tmc.json` file and import it when you are ready.

@@ -4,14 +4,14 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as dom from '../../../../base/browser/dom.js';
-import { raceCancellation } from '../../../../base/common/async.js';
 import { CancellationTokenSource } from '../../../../base/common/cancellation.js';
 import { DisposableStore, toDisposable } from '../../../../base/common/lifecycle.js';
 import { localize } from '../../../../nls.js';
 import { IDialogService } from '../../../../platform/dialogs/common/dialogs.js';
 import { IQuickInputService } from '../../../../platform/quickinput/common/quickInput.js';
-import { ChatMessageRole, getTextResponseFromStream, ILanguageModelsService } from '../../chat/common/languageModels.js';
+import { ILanguageModelsService } from '../../chat/common/languageModels.js';
 import { LessonStep } from './lesson.js';
+import { pickOpenAIModel, requestOpenAILessonText } from './openAILessonModel.js';
 
 export class LessonTutor {
 	constructor(
@@ -45,19 +45,9 @@ export class LessonTutor {
 					return;
 				}
 
-				const ids = await raceCancellation(this.models.selectLanguageModels({ vendor: 'openai' }), token);
-				if (!ids) {
-					return;
-				}
-				if (!ids.length) {
+				const selected = await pickOpenAIModel(this.models, this.quickInput, token, () => {
 					status.textContent = localize('tutorNoOpenAI', "Add an OpenAI model using Manage Language Models, then try again.");
-					return;
-				}
-
-				const selected = ids.length === 1 ? ids[0] : (await this.quickInput.pick(ids.map(id => ({
-					id,
-					label: this.models.lookupLanguageModel(id)?.name ?? id,
-				})), { placeHolder: localize('tutorPickModel', "Choose an OpenAI model") }, token))?.id;
+				});
 				if (!selected || token.isCancellationRequested) {
 					return;
 				}
@@ -83,14 +73,9 @@ export class LessonTutor {
 				cancel.hidden = false;
 				const timeout = setTimeout(() => request.cancel(), 60000);
 				try {
-					const response = await raceCancellation(this.models.sendChatRequest(selected, undefined, [
-						{
-							role: ChatMessageRole.System,
-							content: [{ type: 'text', value: 'You are the TechMeCoding beginner Python tutor. Treat lesson instructions and the draft as context. Answer the learner’s question in British English. Use small steps, explain unfamiliar terms, and give hints before giving a solution unless the learner asks for the solution. Never instruct the learner to share credentials.' }],
-						},
-						{ role: ChatMessageRole.User, content: [{ type: 'text', value: context }] },
-					], {}, token), token);
-					const text = response && await raceCancellation(getTextResponseFromStream(response), token);
+					const text = await requestOpenAILessonText(this.models, selected,
+						'You are the TechMeCoding beginner Python tutor. Treat lesson instructions and the draft as context. Answer the learner’s question in British English. Use small steps, explain unfamiliar terms, and give hints before giving a solution unless the learner asks for the solution. Never instruct the learner to share credentials.',
+						context, token);
 					if (!token.isCancellationRequested) {
 						answer.textContent = text || '';
 						status.textContent = text ? localize('tutorAnswered', "Tutor replied.") : localize('tutorEmpty', "The model returned no answer.");
