@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "title": "Store and update a Python variable",
+  "objective": "Use a name to store a number and update it.",
+  "steps": [
+    {
+      "title": "Predict how a score changes",
+      "instruction": "Read the three lines. Predict the final score before running the example yourself.",
+      "check": "The output should be 3. Explain why the second line reads the old value before assigning the new one.",
+      "code": "score = 2\nscore = score + 1\nprint(score)",
+      "animation": {
+        "kind": "variables",
+        "frames": [
+          { "line": 1, "caption": "Assign 2 to the name score.", "variables": [{ "name": "score", "value": "2" }] },
+          { "line": 2, "caption": "Read 2, add 1, and assign 3 to score.", "variables": [{ "name": "score", "value": "3" }] },
+          { "line": 3, "caption": "Display the current score.", "variables": [{ "name": "score", "value": "3" }], "output": "3\n" }
+        ]
+      }
+    }
+  ]
+}

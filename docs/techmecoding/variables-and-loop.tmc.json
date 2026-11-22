@@ -1,0 +1,141 @@
+{
+  "version": 1,
+  "title": "Keep score with variables and a for loop",
+  "objective": "Assign a value, then update a running total once for each item in a list.",
+  "steps": [
+    {
+      "title": "Predict how a score changes",
+      "instruction": "Read the three lines. Predict the final score before running the example yourself.",
+      "check": "The output should be 3. Explain why the second line reads the old value before assigning the new one.",
+      "code": "score = 2\nscore = score + 1\nprint(score)",
+      "animation": {
+        "kind": "variables",
+        "frames": [
+          {
+            "line": 1,
+            "caption": "Assign 2 to the name score.",
+            "variables": [
+              {
+                "name": "score",
+                "value": "2"
+              }
+            ]
+          },
+          {
+            "line": 2,
+            "caption": "Read 2, add 1, and assign 3 to score.",
+            "variables": [
+              {
+                "name": "score",
+                "value": "3"
+              }
+            ]
+          },
+          {
+            "line": 3,
+            "caption": "Display the current score.",
+            "variables": [
+              {
+                "name": "score",
+                "value": "3"
+              }
+            ],
+            "output": "3\n"
+          }
+        ]
+      }
+    },
+    {
+      "title": "Add each score to a running total",
+      "instruction": "A list stores several items in order. The for line takes the next item and gives it the name points. The indented line runs once per item. Predict the total after each addition, then compare your prediction with the trace.",
+      "check": "Explain why the total visits 0, 2 and 5. Change the last item to 4 and predict the printed result before running it.",
+      "code": "total = 0\nfor points in [2, 3]:\n    total = total + points\nprint(total)",
+      "animation": {
+        "kind": "loop",
+        "frames": [
+          {
+            "line": 1,
+            "caption": "Start at zero.",
+            "variables": [
+              {
+                "name": "total",
+                "value": "0"
+              }
+            ]
+          },
+          {
+            "line": 2,
+            "caption": "Take the first item.",
+            "variables": [
+              {
+                "name": "total",
+                "value": "0"
+              },
+              {
+                "name": "points",
+                "value": "2"
+              }
+            ]
+          },
+          {
+            "line": 3,
+            "caption": "Add two.",
+            "variables": [
+              {
+                "name": "total",
+                "value": "2"
+              },
+              {
+                "name": "points",
+                "value": "2"
+              }
+            ]
+          },
+          {
+            "line": 2,
+            "caption": "Take the second item.",
+            "variables": [
+              {
+                "name": "total",
+                "value": "2"
+              },
+              {
+                "name": "points",
+                "value": "3"
+              }
+            ]
+          },
+          {
+            "line": 3,
+            "caption": "Add three to the running total.",
+            "variables": [
+              {
+                "name": "total",
+                "value": "5"
+              },
+              {
+                "name": "points",
+                "value": "3"
+              }
+            ]
+          },
+          {
+            "line": 4,
+            "caption": "The list is exhausted. Print the total.",
+            "variables": [
+              {
+                "name": "total",
+                "value": "5"
+              },
+              {
+                "name": "points",
+                "value": "3"
+              }
+            ],
+            "output": "5\n"
+          }
+        ]
+      }
+    }
+  ]
+}

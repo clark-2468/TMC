@@ -30,6 +30,7 @@ import './browser/actions/workspaceActions.js';
 import './browser/actions/workspaceCommands.js';
 import './browser/actions/quickAccessActions.js';
 import './browser/actions/widgetNavigationCommands.js';
+import './contrib/techMeCoding/browser/instructions.contribution.js';
 
 //#endregion
 
