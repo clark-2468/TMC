@@ -25,16 +25,34 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Locate x64 Windows SDK tools
+        shell: pwsh
+        run: |
+          $sdkBin = Join-Path ${env:ProgramFiles(x86)} 'Windows Kits/10/bin'
+          $signTool = Get-ChildItem -LiteralPath $sdkBin -Directory |
+            Where-Object { $_.Name -match '^10[.]' } |
+            Sort-Object { [version] $_.Name } -Descending |
+            ForEach-Object { Join-Path $_.FullName 'x64/signtool.exe' } |
+            Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } |
+            Select-Object -First 1
+          if (-not $signTool) { throw 'The x64 Windows SDK SignTool is missing.' }
+          Add-Content -LiteralPath $env:GITHUB_PATH -Value (Split-Path $signTool -Parent)
+
       - name: Package the Windows x64 desktop application
         run: pnpm run gulp vscode-win32-x64
 
-      - name: Check package contents and include example lessons
+      - name: Smoke-test package and include example lessons
         shell: pwsh
         run: |
           $package = Join-Path (Split-Path $env:GITHUB_WORKSPACE -Parent) 'VSCode-win32-x64'
           $product = Get-Content -LiteralPath product.json -Raw | ConvertFrom-Json
           if (-not (Test-Path -LiteralPath (Join-Path $package ($product.nameShort + '.exe')) -PathType Leaf)) {
             throw 'The desktop executable is missing.'
+          }
+          $cli = Join-Path $package ('bin/' + $product.applicationName + '.cmd')
+          $versionInfo = & $cli --version
+          if ($LASTEXITCODE -ne 0 -or $env:GITHUB_SHA -notin $versionInfo -or 'x64' -notin $versionInfo) {
+            throw "Unexpected package version information: $versionInfo"
           }
           $lessonFolder = Join-Path $package 'TMC-Lessons'
           New-Item -ItemType Directory -Path $lessonFolder -Force | Out-Null
