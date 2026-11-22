@@ -29,4 +29,4 @@ Show the code beside the state it produces. Start paused. Give the learner **Pre
 - **Functions** show the argument-to-parameter assignment, the local values used, and the result flowing back into the caller. Explain each transition in the caption. Scoped call-stack data can be added in a later format version.
 - **Output** shows the cumulative text so learners can compare it with what they see when they run the example themselves.
 
-Version 1 stores illustrative frames supplied by the lesson author. The importer displays them as a text trace. Graphical playback and live Python tracing are separate implementation steps.
+Version 1 stores illustrative frames supplied by the lesson author. Learning Mode plays these frames beside the original example and highlights the corresponding line. Live Python tracing is a separate implementation step.

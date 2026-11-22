@@ -21,6 +21,7 @@ import { IEditorOpenContext } from '../../../common/editor.js';
 import { EditorInput } from '../../../common/editor/editorInput.js';
 import { IEditorGroup } from '../../../services/editor/common/editorGroupsService.js';
 import { Lesson } from './lesson.js';
+import { renderLessonTrace } from './lessonTrace.js';
 import './media/lessonEditor.css';
 
 export class LessonEditorInput extends EditorInput {
@@ -122,15 +123,8 @@ export class LessonEditor extends EditorPane {
 		dom.append(instructions, dom.$('p.tmc-text', undefined, step.instruction));
 		dom.append(instructions, dom.$('h3', undefined, localize('lessonCheck', "Check")));
 		dom.append(instructions, dom.$('p.tmc-text', undefined, step.check));
-		if (step.animation) {
-			dom.append(instructions, dom.$('h3', undefined, localize('lessonExampleTrace', "Example execution trace")));
-			const trace = step.animation.frames.map(frame => {
-				const variables = frame.variables.map(({ name, value }) => `${name} = ${value}`).join(', ');
-				const line = localize('lessonTraceLine', "Line {0}", frame.line);
-				const output = frame.output ? localize('lessonTraceOutput', "Output: {0}", frame.output) : '';
-				return [`${line} — ${frame.caption}`, variables, output].filter(Boolean).join('\n');
-			}).join('\n\n');
-			dom.append(instructions, dom.$('p.tmc-text', undefined, trace));
+		if (step.animation && step.code) {
+			renderLessonTrace(instructions, step.code, step.animation.frames, this.controls);
 		}
 
 		const code = dom.append(columns, dom.$('section'));

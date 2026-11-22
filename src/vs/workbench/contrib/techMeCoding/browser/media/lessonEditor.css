@@ -55,3 +55,18 @@
 	height: 280px;
 	border: 1px solid var(--vscode-editorWidget-border, var(--vscode-widget-border, transparent));
 }
+
+.tmc-lesson .tmc-trace-lines {
+	padding-inline-start: 3em;
+}
+
+.tmc-lesson .tmc-trace-lines li {
+	padding-inline: 6px;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+.tmc-lesson .tmc-trace-lines li[aria-current] {
+	background: var(--vscode-editor-lineHighlightBackground);
+	outline: 1px solid var(--vscode-focusBorder);
+}
