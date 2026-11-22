@@ -1,0 +1,114 @@
+{
+  "version": 1,
+  "title": "Make a decision with a Python function",
+  "objective": "Follow a function call, see how a condition selects a return value, and store the result in a dictionary.",
+  "steps": [
+    {
+      "title": "Choose one message",
+      "instruction": "A function gives a name to a block of code. The name points in the parentheses is a parameter. When the function is called with 8, Python gives points the value 8. Predict which return statement runs. The return statement gives a value back to the caller and ends that call.",
+      "check": "Explain what happens when points is exactly 10. Then change 8 to 12 in your draft and predict the new result.",
+      "code": "def result(points):\n    if points >= 10:\n        return \"pass\"\n    return \"try again\"\n\nmessage = result(8)\nprint(message)",
+      "exercise": {
+        "prompt": "What text does the original programme print?",
+        "expectedAnswer": "try again",
+        "hint": "Compare 8 with 10. The indented return runs only when the condition is true."
+      },
+      "animation": {
+        "kind": "function",
+        "frames": [
+          {
+            "line": 6,
+            "caption": "Call result with the argument 8. The assignment waits for a return value.",
+            "variables": []
+          },
+          {
+            "line": 2,
+            "caption": "Inside the call, points is 8, so points >= 10 is false.",
+            "variables": [
+              {
+                "name": "points",
+                "value": "8"
+              }
+            ]
+          },
+          {
+            "line": 4,
+            "caption": "Return try again. The function call now ends.",
+            "variables": [
+              {
+                "name": "points",
+                "value": "8"
+              }
+            ]
+          },
+          {
+            "line": 7,
+            "caption": "Python has assigned the return value to message. Print it.",
+            "variables": [
+              {
+                "name": "message",
+                "value": "\"try again\""
+              }
+            ],
+            "output": "try again\n"
+          }
+        ]
+      }
+    },
+    {
+      "title": "Look up a result by name",
+      "instruction": "A dictionary stores values under keys. Here, the keys are learner names and the values are scores. Square brackets ask the dictionary for the value under a particular key. Find the key Sam, then predict the value shown in the output.",
+      "check": "Add a new name with a score. Change the lookup to that name. Compare your prediction with the result.",
+      "code": "scores = {\"Sam\": 8, \"Jo\": 12}\nresult = scores[\"Sam\"]\nprint(result)",
+      "exercise": {
+        "prompt": "What number does the original lookup print?",
+        "expectedAnswer": "8",
+        "hint": "Read the value to the right of the colon after the key \"Sam\"."
+      },
+      "animation": {
+        "kind": "variables",
+        "frames": [
+          {
+            "line": 1,
+            "caption": "Create the dictionary and assign it to scores.",
+            "variables": [
+              {
+                "name": "scores",
+                "value": "{\"Sam\": 8, \"Jo\": 12}"
+              }
+            ]
+          },
+          {
+            "line": 2,
+            "caption": "Look up the key Sam and assign its value to result.",
+            "variables": [
+              {
+                "name": "scores",
+                "value": "{\"Sam\": 8, \"Jo\": 12}"
+              },
+              {
+                "name": "result",
+                "value": "8"
+              }
+            ]
+          },
+          {
+            "line": 3,
+            "caption": "Print the value associated with result.",
+            "variables": [
+              {
+                "name": "result",
+                "value": "8"
+              },
+              {
+                "name": "scores",
+                "value": "{\"Sam\": 8, \"Jo\": 12}"
+              }
+            ],
+            "output": "8\n"
+          }
+        ]
+      }
+    }
+  ]
+}
