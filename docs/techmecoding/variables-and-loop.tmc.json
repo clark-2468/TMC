@@ -6,7 +6,12 @@
     {
       "title": "Predict how a score changes",
       "instruction": "Read the three lines. Predict the final score before running the example yourself.",
-      "check": "The output should be 3. Explain why the second line reads the old value before assigning the new one.",
+      "check": "Explain why the second line reads the old value before assigning the new one.",
+      "exercise": {
+        "prompt": "What number will the programme print?",
+        "expectedAnswer": "3",
+        "hint": "Start with 2 and increase it by 1 before looking at the print line."
+      },
       "code": "score = 2\nscore = score + 1\nprint(score)",
       "animation": {
         "kind": "variables",

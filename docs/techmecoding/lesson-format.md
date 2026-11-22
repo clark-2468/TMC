@@ -10,9 +10,11 @@ Copy this prompt and replace the final line with your question.
 >
 > Return one valid JSON object. Use double quotes, escape newlines in code strings as `\n`, and omit Markdown fences, comments, trailing commas, and unlisted fields.
 >
-> The top-level fields are `version` (the number 1), `title` (up to 120 characters), `objective` (up to 2,000 characters) and `steps` (1–30 objects in teaching order). Each step requires `title` (up to 120 characters), `instruction` and `check` (up to 2,000 characters each). Required text must contain visible content. A step can include `code` (Python source, up to 4,000 characters) and `animation`.
+> The top-level fields are `version` (the number 1), `title` (up to 120 characters), `objective` (up to 2,000 characters) and `steps` (1–30 objects in teaching order). Each step requires `title` (up to 120 characters), `instruction` and `check` (up to 2,000 characters each). Required text must contain visible content. A step can include `code` (Python source, up to 4,000 characters), `animation` and `exercise`.
 >
 > An animation requires code and has `kind` (`variables`, `loop`, or `function`) and `frames` (2–20 objects in execution order). Each frame has `line` (a 1-based line number within this step’s code), `caption` (up to 2,000 characters), and `variables` (up to 12 objects containing unique Python identifier `name` and string `value`, up to 80 and 200 characters respectively). Use simple ASCII names. Include only variables visible at that point and show their values after the line executes. Optional `output` (up to 1,000 characters) is the cumulative output after that line. Omit optional fields where they do not apply. Keep the file under 1 MiB.
+>
+> An exercise has a `prompt` (up to 2,000 characters), an `expectedAnswer` (up to 1,000 characters) and an optional `hint` (up to 2,000 characters). Use exercises when the answer is unambiguous and can be compared as text. Answer checking ignores leading and trailing whitespace and differences in line endings. Use the step’s `check` to guide open-ended reflection.
 >
 > Trace the code yourself before returning the JSON. Use simple examples with no input, randomness, network access, or external packages. If you cannot reliably trace a snippet, omit its animation.
 >

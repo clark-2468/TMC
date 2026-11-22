@@ -20,7 +20,9 @@ import { EditorPane } from '../../../browser/parts/editor/editorPane.js';
 import { IEditorOpenContext } from '../../../common/editor.js';
 import { EditorInput } from '../../../common/editor/editorInput.js';
 import { IEditorGroup } from '../../../services/editor/common/editorGroupsService.js';
+import { IEditorService, SIDE_GROUP } from '../../../services/editor/common/editorService.js';
 import { Lesson } from './lesson.js';
+import { LessonExerciseState, renderLessonExercise } from './lessonExercise.js';
 import { renderLessonTrace } from './lessonTrace.js';
 import './media/lessonEditor.css';
 
@@ -30,6 +32,7 @@ export class LessonEditorInput extends EditorInput {
 	override readonly resource = undefined;
 
 	stepIndex = 0;
+	readonly exercises = new Map<number, LessonExerciseState>();
 	private readonly drafts = new Map<number, ITextModel>();
 
 	constructor(readonly lesson: Lesson) {
@@ -64,6 +67,7 @@ export class LessonEditor extends EditorPane {
 		@IInstantiationService private readonly instantiationService: IInstantiationService,
 		@IModelService private readonly modelService: IModelService,
 		@ILanguageService private readonly languageService: ILanguageService,
+		@IEditorService private readonly editorService: IEditorService,
 	) {
 		super(LessonEditor.ID, group, telemetryService, themeService, storageService);
 	}
@@ -123,6 +127,11 @@ export class LessonEditor extends EditorPane {
 		dom.append(instructions, dom.$('p.tmc-text', undefined, step.instruction));
 		dom.append(instructions, dom.$('h3', undefined, localize('lessonCheck', "Check")));
 		dom.append(instructions, dom.$('p.tmc-text', undefined, step.check));
+		if (step.exercise) {
+			const state = input.exercises.get(stepIndex) ?? { answer: '', checked: false, hintOpen: false };
+			input.exercises.set(stepIndex, state);
+			renderLessonExercise(instructions, step.exercise, state, this.controls);
+		}
 		if (step.animation && step.code) {
 			renderLessonTrace(instructions, step.code, step.animation.frames, this.controls);
 		}
@@ -130,7 +139,7 @@ export class LessonEditor extends EditorPane {
 		const code = dom.append(columns, dom.$('section'));
 		const codeLabel = localize('pythonDraft', "Python draft");
 		dom.append(code, dom.$('h2', undefined, codeLabel));
-		dom.append(code, dom.$('p', undefined, localize('draftLifetime', "Drafts are kept while this lesson tab is open. Copy your code to a file to keep it.")));
+		dom.append(code, dom.$('p', undefined, localize('draftLifetime', "Drafts are kept while this lesson tab is open. Open the draft in a Python editor to save a copy.")));
 		const container = dom.append(code, dom.$('.tmc-code'));
 		const editor = this.controls.add(this.instantiationService.createInstance(CodeEditorWidget, container, {
 			ariaLabel: codeLabel,
@@ -138,7 +147,19 @@ export class LessonEditor extends EditorPane {
 			minimap: { enabled: false },
 			scrollBeyondLastLine: false,
 		}, {}));
-		editor.setModel(input.getDraft(stepIndex, this.modelService, this.languageService));
+		const draft = input.getDraft(stepIndex, this.modelService, this.languageService);
+		editor.setModel(draft);
+
+		const actions = dom.append(code, dom.$('.tmc-navigation'));
+		const openDraft = dom.append(actions, dom.$('button', { type: 'button' }, localize('openPythonDraft', "Open Draft in Python Editor")));
+		this.controls.add(dom.addDisposableListener(openDraft, 'click', async () => {
+			await this.editorService.openEditor({
+				resource: undefined,
+				languageId: 'python',
+				contents: draft.getValue(),
+				options: { pinned: true }
+			}, SIDE_GROUP);
+		}));
 
 		if (focusStep) {
 			heading.focus();

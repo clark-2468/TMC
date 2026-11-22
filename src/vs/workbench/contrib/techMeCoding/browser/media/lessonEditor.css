@@ -70,3 +70,20 @@
 	background: var(--vscode-editor-lineHighlightBackground);
 	outline: 1px solid var(--vscode-focusBorder);
 }
+
+.tmc-lesson .tmc-exercise textarea {
+	box-sizing: border-box;
+	display: block;
+	width: 100%;
+	margin-block: 6px;
+	padding: 6px;
+	resize: vertical;
+	font: inherit;
+	color: var(--vscode-input-foreground);
+	background: var(--vscode-input-background);
+	border: 1px solid var(--vscode-input-border, var(--vscode-widget-border, transparent));
+}
+
+.tmc-lesson .tmc-exercise summary {
+	cursor: pointer;
+}

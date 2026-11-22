@@ -10,10 +10,17 @@ export interface LessonFrame {
 	output?: string;
 }
 
+export interface LessonExercise {
+	prompt: string;
+	expectedAnswer: string;
+	hint?: string;
+}
+
 export interface LessonStep {
 	title: string;
 	instruction: string;
 	check: string;
+	exercise?: LessonExercise;
 	code?: string;
 	animation?: { kind: 'variables' | 'loop' | 'function'; frames: LessonFrame[] };
 }
@@ -57,10 +64,17 @@ function validFrame(value: unknown, lineCount: number): value is LessonFrame {
 	return true;
 }
 
+function validExercise(value: unknown): value is LessonExercise {
+	return record(value, ['prompt', 'expectedAnswer', 'hint']) &&
+		text(value.prompt, 2000) && text(value.expectedAnswer, 1000) &&
+		(value.hint === undefined || text(value.hint, 2000));
+}
+
 function validStep(value: unknown): value is LessonStep {
-	if (!record(value, ['title', 'instruction', 'check', 'code', 'animation']) ||
+	if (!record(value, ['title', 'instruction', 'check', 'code', 'animation', 'exercise']) ||
 		!text(value.title, 120) || !text(value.instruction, 2000) || !text(value.check, 2000) ||
-		!optionalString(value.code, 4000)) {
+		!optionalString(value.code, 4000) ||
+		(value.exercise !== undefined && !validExercise(value.exercise))) {
 		return false;
 	}
 
