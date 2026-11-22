@@ -51,15 +51,34 @@ export function renderLessonTrace(parent: HTMLElement, code: string, frames: rea
 		dom.clearNode(state);
 		dom.append(state, dom.$('p', undefined, localize('lessonFrameProgress', "Frame {0} of {1} · Line {2}", index + 1, frames.length, frame.line)));
 		dom.append(state, dom.$('p.tmc-text', undefined, frame.caption));
+		if (frame.stack?.length) {
+			dom.append(state, dom.$('h4', undefined, localize('recordedCallStack', "Call stack · current call first")));
+			const stack = dom.append(state, dom.$('ol'));
+			for (const entry of frame.stack) {
+				dom.append(stack, dom.$('li', undefined, localize('recordedStackLine', "{0} · Line {1}",
+					entry.name === '<module>' ? localize('recordedMainScript', "Top level") : entry.name, entry.line)));
+			}
+		}
 		dom.append(state, dom.$('h4', undefined, localize('traceVariables', "Variables")));
-		const previousValues = new Map(frames[index - 1]?.variables.map(({ name, value }) => [name, value]));
+		const prior = frames[index - 1];
+		const sameScope = prior?.stack?.length === frame.stack?.length && prior?.stack?.[0]?.name === frame.stack?.[0]?.name;
+		const previousValues = new Map(sameScope ? prior?.variables.map(({ name, value }) => [name, value]) : undefined);
+		const references = new Map<number, number>();
+		for (const { reference } of frame.variables) {
+			if (reference !== undefined) {
+				references.set(reference, (references.get(reference) ?? 0) + 1);
+			}
+		}
 		if (frame.variables.length || previousValues.size) {
 			const variables = dom.append(state, dom.$('ul.tmc-trace-variables'));
-			for (const { name, value } of frame.variables) {
+			for (const { name, value, reference } of frame.variables) {
 				const previousValue = previousValues.get(name);
 				const row = dom.append(variables, dom.$('li.tmc-text'));
 				dom.append(row, dom.$('code', undefined, `${name} = ${value}`));
-				if (index > 0 && previousValue === undefined) {
+				if (reference !== undefined && (references.get(reference) ?? 0) > 1) {
+					dom.append(row, dom.$('span.tmc-variable-change', undefined, localize('traceSharedObject', "Shared object {0}", reference)));
+				}
+				if (index > 0 && sameScope && previousValue === undefined) {
 					dom.append(row, dom.$('span.tmc-variable-change', undefined, localize('traceVariableAppeared', "New in this frame")));
 				} else if (previousValue !== undefined && previousValue !== value) {
 					dom.append(row, dom.$('span.tmc-variable-change', undefined, localize('traceVariableChanged', "Previously {0}", previousValue)));

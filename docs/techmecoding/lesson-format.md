@@ -52,3 +52,5 @@ Configure an OpenAI model in **Manage Language Models**, then choose **Ask Tutor
 To create a lesson in the app, run **TechMeCoding: Generate Python Lesson** from the Command Palette. Enter a topic and confirm that you want to send it to OpenAI. TMC checks the returned lesson against the version 1 format and opens it as JSON for review. Save it as a `.tmc.json` file and import it when you are ready.
 
 When a trace finishes, TMC also opens a playback tab for files up to 20,000 characters when at least one frame was recorded. Playback uses the saved source read by the trace runner. The terminal retains the programme's output and errors.
+
+Recorded playback shows up to eight calls from the current file, starting with the innermost call. An exception frame shows where Python raised an exception, including exceptions the programme handles. Lists, tuples, sets and dictionaries show a bounded sample of their contents. Matching **Shared object** labels mean that two names refer to the same object in that frame. Labels are local to the frame.

@@ -41,4 +41,23 @@ suite('TechMeCoding lesson data', () => {
 			frames: [{ event: 'line', line: 2, variables: [] }],
 		}, 'score.py'), undefined);
 	});
+	test('keeps call stacks, shared references and exception types', () => {
+		const variables = [
+			{ name: 'first', value: '[1, 2]', reference: 1 },
+			{ name: 'second', value: '[1, 2]', reference: 1 },
+		];
+		const stack = [{ name: 'run', line: 2 }, { name: '<module>', line: 3 }];
+		const payload = {
+			source: 'def run():\n    raise ValueError()\nrun()',
+			frames: [{ event: 'exception', exception: 'ValueError', line: 2, variables, stack }],
+		};
+		const frame = readRecordedTrace(payload, 'errors.py')?.steps[0].animation?.frames[0];
+		assert.deepStrictEqual(frame?.stack, stack);
+		assert.deepStrictEqual(frame?.variables, variables);
+		assert.match(frame?.caption ?? '', /ValueError/);
+		assert.strictEqual(readRecordedTrace({
+			...payload,
+			frames: [{ ...payload.frames[0], stack: [{ name: 'invalid', line: 4 }] }],
+		}, 'errors.py'), undefined);
+	});
 });
