@@ -31,6 +31,9 @@ export function renderLessonTrace(parent: HTMLElement, code: string, frames: rea
 	const next = dom.append(nav, dom.$<HTMLButtonElement>('button', { type: 'button' }, localize('nextFrame', "Next frame")));
 	const play = dom.append(nav, dom.$<HTMLButtonElement>('button', { type: 'button' }));
 	const replay = dom.append(nav, dom.$<HTMLButtonElement>('button', { type: 'button' }, localize('replayTrace', "Replay trace")));
+	const seekLabel = dom.append(section, dom.$('label.tmc-trace-seek', undefined, localize('traceSeek', "Jump to frame")));
+	const seek = dom.append(seekLabel, dom.$<HTMLInputElement>('input', { type: 'range', min: '1', max: String(frames.length), step: '1' }));
+	seek.disabled = frames.length === 1;
 	const state = dom.append(section, dom.$('div', { 'aria-live': 'polite', 'aria-atomic': 'true' }));
 
 	let index = 0;
@@ -47,6 +50,13 @@ export function renderLessonTrace(parent: HTMLElement, code: string, frames: rea
 		highlighted?.removeAttribute('aria-current');
 		highlighted = lines[frame.line - 1];
 		highlighted.setAttribute('aria-current', 'step');
+		if (highlighted.offsetTop < source.scrollTop) {
+			source.scrollTop = highlighted.offsetTop;
+		} else if (highlighted.offsetTop + highlighted.offsetHeight > source.scrollTop + source.clientHeight) {
+			source.scrollTop = highlighted.offsetTop + highlighted.offsetHeight - source.clientHeight;
+		}
+		seek.valueAsNumber = index + 1;
+		seek.setAttribute('aria-valuetext', localize('traceSeekPosition', "Frame {0} of {1}", index + 1, frames.length));
 
 		dom.clearNode(state);
 		dom.append(state, dom.$('p', undefined, localize('lessonFrameProgress', "Frame {0} of {1} · Line {2}", index + 1, frames.length, frame.line)));
@@ -110,6 +120,7 @@ export function renderLessonTrace(parent: HTMLElement, code: string, frames: rea
 	store.add(dom.addDisposableListener(previous, 'click', () => show(index - 1)));
 	store.add(dom.addDisposableListener(next, 'click', () => show(index + 1)));
 	store.add(dom.addDisposableListener(play, 'click', () => show(index, !playing)));
+	store.add(dom.addDisposableListener(seek, 'input', () => show(seek.valueAsNumber - 1)));
 	store.add(dom.addDisposableListener(replay, 'click', () => show(0, true)));
 	show(0);
 }

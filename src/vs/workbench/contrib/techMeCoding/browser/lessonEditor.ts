@@ -129,6 +129,21 @@ export class LessonEditor extends EditorPane {
 		next.disabled = stepIndex === lesson.steps.length - 1;
 		this.controls.add(dom.addDisposableListener(next, 'click', () => goTo(stepIndex + 1)));
 
+		if (lesson.steps.length > 2) {
+			const contents = dom.append(this.root, dom.$('details.tmc-step-list'));
+			dom.append(contents, dom.$('summary', undefined, localize('lessonStepList', "All lesson steps")));
+			const list = dom.append(contents, dom.$('ol'));
+			for (const [index, item] of lesson.steps.entries()) {
+				const row = dom.append(list, dom.$('li'));
+				if (index === stepIndex) {
+					dom.append(row, dom.$('span', { 'aria-current': 'step' }, item.title));
+				} else {
+					const jump = dom.append(row, dom.$('button', { type: 'button' }, item.title));
+					this.controls.add(dom.addDisposableListener(jump, 'click', () => goTo(index)));
+				}
+			}
+		}
+
 		const columns = dom.append(this.root, dom.$('.tmc-columns'));
 		const instructions = dom.append(columns, dom.$('section'));
 		const heading = dom.append(instructions, dom.$('h2', { tabindex: '-1' }, step.title));

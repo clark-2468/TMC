@@ -35,7 +35,9 @@
 }
 
 .tmc-lesson button:focus-visible,
-.tmc-lesson h2:focus-visible {
+.tmc-lesson h2:focus-visible,
+.tmc-lesson .tmc-trace-seek input:focus-visible,
+.tmc-lesson summary:focus-visible {
 	outline: 2px solid var(--vscode-focusBorder);
 	outline-offset: 2px;
 }
@@ -53,10 +55,16 @@
 
 .tmc-lesson .tmc-code {
 	height: 280px;
+	min-height: 140px;
+	resize: vertical;
+	overflow: hidden;
 	border: 1px solid var(--vscode-editorWidget-border, var(--vscode-widget-border, transparent));
 }
 
 .tmc-lesson .tmc-trace-lines {
+	position: relative;
+	max-block-size: 18rem;
+	overflow: auto;
 	padding-inline-start: 3em;
 }
 
@@ -97,4 +105,27 @@
 	margin-inline-start: 8px;
 	color: var(--vscode-descriptionForeground);
 	font-size: 0.9em;
+}
+
+.tmc-lesson .tmc-trace-seek {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+}
+
+.tmc-lesson .tmc-trace-seek input {
+	accent-color: var(--vscode-focusBorder);
+}
+
+.tmc-lesson .tmc-step-list {
+	margin-block-end: 18px;
+}
+
+.tmc-lesson .tmc-step-list summary {
+	cursor: pointer;
+}
+
+.tmc-lesson .tmc-step-list li {
+	margin-block: 4px;
 }
