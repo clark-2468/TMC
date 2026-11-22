@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "title": "Build and test a two-file Python project",
+  "objective": "Organise code into a module, test the calculation, diagnose a failure and save a Git checkpoint.",
+  "steps": [
+    {
+      "title": "Open a project folder and create an environment",
+      "instruction": "Create an empty folder called score-project and open it in the desktop app. The Explorer shows files in that folder. Run TechMeCoding: Create Python Virtual Environment from the Command Palette, choose your installed Python interpreter and confirm. A virtual environment gives this project its own interpreter and installed packages.",
+      "check": "Wait for setup to finish. The folder should contain .venv and the terminal should show no setup error. This lesson uses only Python’s standard library, so no extra package is needed."
+    },
+    {
+      "title": "Put the calculation in its own module",
+      "instruction": "A module is a Python file that another file can import. Open this draft in the Python editor and save it as scores.py at the project root, beside .venv. The function total_scores accepts a list of scores. sum adds all the numbers and return gives the total back to the caller.",
+      "check": "In the Explorer, confirm that the file is named scores.py and is outside the .venv folder.",
+      "code": "def total_scores(scores):\n    return sum(scores)\n"
+    },
+    {
+      "title": "Import the function and test the result",
+      "instruction": "Save this draft as test_scores.py in the same folder as scores.py. The import brings total_scores into the test file. assertEqual compares the actual result with the expected result. Run the saved test file with TechMeCoding: Run Saved Python File and choose the interpreter inside .venv.",
+      "check": "The terminal should report one test and OK. If you see ModuleNotFoundError, check the spelling of scores.py and confirm both files are in the same folder.",
+      "code": "import unittest\nfrom scores import total_scores\n\n\nclass ScoreTests(unittest.TestCase):\n    def test_adds_two_scores(self):\n        self.assertEqual(total_scores([2, 3]), 5)\n\n\nif __name__ == \"__main__\":\n    unittest.main()\n",
+      "exercise": {
+        "prompt": "What total does this test expect?",
+        "expectedAnswer": "5",
+        "hint": "Look at the second argument passed to assertEqual."
+      }
+    },
+    {
+      "title": "Read a failing test",
+      "instruction": "In the saved test_scores.py, temporarily change 5 to 6. Save and run the file again. Read the last part of the output. A traceback lists the calls that led to an error and points to the line where the test failed.",
+      "check": "Find the comparison between 5 and 6. Restore the correct expected value, save and rerun until the test reports OK."
+    },
+    {
+      "title": "Save a Git checkpoint",
+      "instruction": "With Git installed, open Source Control and initialise a repository if this project does not already have one. Create a plain text file named .gitignore in the project root and put .venv/ and __pycache__/ on separate lines. Git will then leave .venv and Python’s generated cache files out of the changes list. Stage .gitignore, scores.py and test_scores.py. Enter a commit message describing what works, then commit.",
+      "check": "Source Control should report no pending changes after the commit. If Git asks for an identity, follow its setup instructions and retry the commit."
+    }
+  ]
+}
