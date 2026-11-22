@@ -20,7 +20,7 @@ Copy this prompt and replace the final line with your question.
 >
 > Learner’s question: [INSERT QUESTION]
 
-Try the [variables](python-variables.tmc.json), [running total](variables-and-loop.tmc.json), [functions and decisions](functions-and-decisions.tmc.json), and [first Python project](first-python-project.tmc.json) examples.
+Try the [variables](python-variables.tmc.json), [running total](variables-and-loop.tmc.json), [functions and decisions](functions-and-decisions.tmc.json), [types and while loops](types-and-while.tmc.json), and [first Python project](first-python-project.tmc.json) examples.
 
 ## Teaching animation design
 

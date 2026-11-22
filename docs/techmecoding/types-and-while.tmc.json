@@ -1,0 +1,247 @@
+{
+  "version": 1,
+  "title": "Compare values and follow a while loop",
+  "objective": "Recognise several Python data types, predict a comparison result and explain when a while loop ends.",
+  "steps": [
+    {
+      "title": "Use a string, a floating-point number and a Boolean",
+      "instruction": "Read the first three assignments. Quotes make \"tea\" a string. A number written with a decimal point here becomes a floating-point number. The comparison uses two equals signs and gives a Boolean, either True or False. Predict what happens when the comparison is printed.",
+      "check": "Compare the Boolean result with your prediction. Change the second value in the comparison to 3.0 and predict the new output.",
+      "code": "drink = \"tea\"\nprice = 2.5\nis_match = price == 2.5\nprint(drink, is_match)",
+      "exercise": {
+        "prompt": "What does the programme print? Include the space between its two values.",
+        "expectedAnswer": "tea True",
+        "hint": "The comparison is true, and print displays both arguments separated by a space."
+      },
+      "animation": {
+        "kind": "variables",
+        "frames": [
+          {
+            "line": 1,
+            "caption": "Associate drink with the string tea.",
+            "variables": [
+              {
+                "name": "drink",
+                "value": "\"tea\""
+              }
+            ]
+          },
+          {
+            "line": 2,
+            "caption": "Associate price with the floating-point number 2.5.",
+            "variables": [
+              {
+                "name": "drink",
+                "value": "\"tea\""
+              },
+              {
+                "name": "price",
+                "value": "2.5"
+              }
+            ]
+          },
+          {
+            "line": 3,
+            "caption": "Compare price with 2.5. The comparison produces True.",
+            "variables": [
+              {
+                "name": "drink",
+                "value": "\"tea\""
+              },
+              {
+                "name": "price",
+                "value": "2.5"
+              },
+              {
+                "name": "is_match",
+                "value": "True"
+              }
+            ]
+          },
+          {
+            "line": 4,
+            "caption": "Display the two arguments with a space between them.",
+            "variables": [
+              {
+                "name": "drink",
+                "value": "\"tea\""
+              },
+              {
+                "name": "price",
+                "value": "2.5"
+              },
+              {
+                "name": "is_match",
+                "value": "True"
+              }
+            ],
+            "output": "tea True\n"
+          }
+        ]
+      }
+    },
+    {
+      "title": "Count unique items with a set",
+      "instruction": "A tuple holds values in order. Here it contains three names, including tea twice. A set keeps one copy of each distinct value. The built-in len counts how many values the set contains. Predict the number before checking it.",
+      "check": "Add a new distinct name to the tuple and predict the new count. The number stays the same if you add another copy of a name already present.",
+      "code": "drinks = (\"tea\", \"tea\", \"coffee\")\nunique = set(drinks)\nprint(len(unique))",
+      "exercise": {
+        "prompt": "How many distinct drink names does the programme count?",
+        "expectedAnswer": "2",
+        "hint": "Count tea once, then count coffee."
+      },
+      "animation": {
+        "kind": "variables",
+        "frames": [
+          {
+            "line": 1,
+            "caption": "Build the tuple. It keeps both occurrences of tea.",
+            "variables": [
+              {
+                "name": "drinks",
+                "value": "(\"tea\", \"tea\", \"coffee\")"
+              }
+            ]
+          },
+          {
+            "line": 2,
+            "caption": "Build an unordered set with one copy of each distinct name.",
+            "variables": [
+              {
+                "name": "drinks",
+                "value": "(\"tea\", \"tea\", \"coffee\")"
+              },
+              {
+                "name": "unique",
+                "value": "{\"tea\", \"coffee\"}"
+              }
+            ]
+          },
+          {
+            "line": 3,
+            "caption": "Count the items in the set and print the count.",
+            "variables": [
+              {
+                "name": "drinks",
+                "value": "(\"tea\", \"tea\", \"coffee\")"
+              },
+              {
+                "name": "unique",
+                "value": "{\"tea\", \"coffee\"}"
+              }
+            ],
+            "output": "2\n"
+          }
+        ]
+      }
+    },
+    {
+      "title": "Follow a while loop until it stops",
+      "instruction": "A while loop checks its condition before each pass through the indented lines. Start with remaining equal to 2. The loop prints the current value and subtracts 1. Follow what happens when remaining reaches zero.",
+      "check": "Explain why 0 is printed by the line after the loop. Then change the starting value to 3 and predict all the output lines.",
+      "code": "remaining = 2\nwhile remaining > 0:\n    print(remaining)\n    remaining = remaining - 1\nprint(\"Finished:\", remaining)",
+      "animation": {
+        "kind": "loop",
+        "frames": [
+          {
+            "line": 1,
+            "caption": "Set the counter to 2.",
+            "variables": [
+              {
+                "name": "remaining",
+                "value": "2"
+              }
+            ]
+          },
+          {
+            "line": 2,
+            "caption": "2 is greater than 0, so enter the loop body.",
+            "variables": [
+              {
+                "name": "remaining",
+                "value": "2"
+              }
+            ]
+          },
+          {
+            "line": 3,
+            "caption": "Print the counter before subtracting.",
+            "variables": [
+              {
+                "name": "remaining",
+                "value": "2"
+              }
+            ],
+            "output": "2\n"
+          },
+          {
+            "line": 4,
+            "caption": "Subtract one and assign the result back to remaining.",
+            "variables": [
+              {
+                "name": "remaining",
+                "value": "1"
+              }
+            ],
+            "output": "2\n"
+          },
+          {
+            "line": 2,
+            "caption": "1 is greater than 0, so run the body again.",
+            "variables": [
+              {
+                "name": "remaining",
+                "value": "1"
+              }
+            ],
+            "output": "2\n"
+          },
+          {
+            "line": 3,
+            "caption": "Print the current counter.",
+            "variables": [
+              {
+                "name": "remaining",
+                "value": "1"
+              }
+            ],
+            "output": "2\n1\n"
+          },
+          {
+            "line": 4,
+            "caption": "Subtract one and store 0.",
+            "variables": [
+              {
+                "name": "remaining",
+                "value": "0"
+              }
+            ],
+            "output": "2\n1\n"
+          },
+          {
+            "line": 2,
+            "caption": "0 is not greater than 0, so skip the body and leave the loop.",
+            "variables": [
+              {
+                "name": "remaining",
+                "value": "0"
+              }
+            ],
+            "output": "2\n1\n"
+          },
+          {
+            "line": 5,
+            "caption": "Print the final message outside the loop.",
+            "variables": [
+              {
+                "name": "remaining",
+                "value": "0"
+              }
+            ],
+            "output": "2\n1\nFinished: 0\n"
+          }
+        ]
+      }
+    }
+  ]
+}
