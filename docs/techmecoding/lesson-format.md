@@ -32,3 +32,13 @@ Show the code beside the state it produces. Start paused. Give the learner **Pre
 - **Output** shows the cumulative text so learners can compare it with what they see when they run the example themselves.
 
 Version 1 stores illustrative frames supplied by the lesson author. Learning Mode plays these frames beside the original example and highlights the corresponding line. Live Python tracing is a separate implementation step.
+
+## Run a Python draft on desktop
+
+1. In Learning Mode, choose **Open Draft in Python Editor**.
+2. Save the draft as a local `.py` file.
+3. Open the Command Palette and choose **TechMeCoding: Run Saved Python File**.
+4. Choose the executable for an installed Python interpreter (for example, the executable in your virtual environment).
+5. Review the file and interpreter paths, then confirm. The integrated terminal shows the programme's output and errors, and stays open after it exits.
+
+The command requires a trusted workspace and a local desktop window. Trace playback in a lesson continues to show the recorded example, while terminal output comes from the saved file.
