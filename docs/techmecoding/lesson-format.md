@@ -60,6 +60,6 @@ Recorded playback shows up to eight calls from the current file, starting with t
 1. Install Python separately and open a trusted, local project folder in the desktop app.
 2. From the Command Palette, choose **TechMeCoding: Create Python Virtual Environment**. Select an installed Python interpreter and confirm. This creates a `.venv` directory in the project. The terminal shows whether setup succeeded.
 3. To add a dependency, choose **TechMeCoding: Install Package in Python Virtual Environment**. Enter its package name, review the confirmation, then check pip’s output in the terminal.
-4. When running a lesson draft, choose that environment’s interpreter. On Windows it is `.venv\Scripts\python.exe`. On macOS or Linux it is `.venv/bin/python`.
+4. When running a saved lesson draft, TMC offers the project’s virtual environment if it finds one. To select it manually, on Windows use `.venv\Scripts\python.exe`. On macOS or Linux it is `.venv/bin/python`.
 
 Use the same interpreter for all files in the project. The files you save and the packages you install belong to that project’s workflow.

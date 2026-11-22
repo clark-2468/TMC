@@ -16,13 +16,16 @@ import { IDialogService, IFileDialogService } from '../../../../platform/dialogs
 import { IFileService } from '../../../../platform/files/common/files.js';
 import { ServicesAccessor } from '../../../../platform/instantiation/common/instantiation.js';
 import { INotificationService } from '../../../../platform/notification/common/notification.js';
+import { IQuickInputService } from '../../../../platform/quickinput/common/quickInput.js';
 import { TerminalLocation } from '../../../../platform/terminal/common/terminal.js';
+import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
 import { IWorkspaceTrustManagementService } from '../../../../platform/workspace/common/workspaceTrust.js';
 import { EditorResourceAccessor } from '../../../common/editor.js';
 import { IEditorService } from '../../../services/editor/common/editorService.js';
 import { IWorkbenchEnvironmentService } from '../../../services/environment/common/environmentService.js';
 import { ITerminalGroupService, ITerminalService } from '../../terminal/browser/terminal.js';
 import { LessonEditorInput } from './lessonEditor.js';
+import { findWorkspacePython } from './pythonEnvironment.js';
 import { readRecordedTrace } from './recordedPythonTrace.js';
 import { pythonTraceScript } from './pythonTrace.js';
 
@@ -66,6 +69,8 @@ async function runPythonFile(accessor: ServicesAccessor, trace: boolean): Promis
 	const dialog = accessor.get(IDialogService);
 	const fileService = accessor.get(IFileService);
 	const trust = accessor.get(IWorkspaceTrustManagementService);
+	const workspace = accessor.get(IWorkspaceContextService);
+	const quickInput = accessor.get(IQuickInputService);
 	const terminalService = accessor.get(ITerminalService);
 	const terminalGroupService = accessor.get(ITerminalGroupService);
 
@@ -85,12 +90,27 @@ async function runPythonFile(accessor: ServicesAccessor, trace: boolean): Promis
 		return;
 	}
 
-	const [interpreter] = await fileDialog.showOpenDialog({
-		title: localize('pythonSelectInterpreter', "Select an Installed Python Interpreter"),
-		canSelectFiles: true,
-		availableFileSystems: [Schemas.file],
-		filters: isWindows ? [{ name: localize('pythonExecutable', "Executable"), extensions: ['exe'] }] : undefined,
-	}) ?? [];
+	const folder = workspace.getWorkspaceFolder(file);
+	const workspacePython = folder?.uri.scheme === Schemas.file ? await findWorkspacePython(folder.uri, fileService) : undefined;
+	let interpreter: URI | undefined;
+	if (workspacePython) {
+		const selection = await quickInput.pick([
+			{ label: localize('pythonUseProjectEnvironment', "Use the project’s virtual environment"), description: workspacePython.fsPath, interpreter: workspacePython },
+			{ label: localize('pythonBrowseForInterpreter', "Choose another interpreter…"), interpreter: undefined },
+		], { placeHolder: localize('pythonChooseProjectInterpreter', "Choose which Python interpreter to run") });
+		if (!selection) {
+			return;
+		}
+		interpreter = selection.interpreter;
+	}
+	if (!interpreter) {
+		[interpreter] = await fileDialog.showOpenDialog({
+			title: localize('pythonSelectInterpreter', "Select an Installed Python Interpreter"),
+			canSelectFiles: true,
+			availableFileSystems: [Schemas.file],
+			filters: isWindows ? [{ name: localize('pythonExecutable', "Executable"), extensions: ['exe'] }] : undefined,
+		}) ?? [];
+	}
 	if (!interpreter) {
 		return;
 	}

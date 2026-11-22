@@ -20,6 +20,7 @@ import { IWorkspaceContextService } from '../../../../platform/workspace/common/
 import { IWorkspaceTrustManagementService } from '../../../../platform/workspace/common/workspaceTrust.js';
 import { IWorkbenchEnvironmentService } from '../../../services/environment/common/environmentService.js';
 import { ITerminalGroupService, ITerminalService } from '../../terminal/browser/terminal.js';
+import { findWorkspacePython } from './pythonEnvironment.js';
 
 registerAction2(class extends Action2 {
 	constructor() {
@@ -84,7 +85,6 @@ async function manageEnvironment(accessor: ServicesAccessor, install: boolean): 
 	}
 	const root = picked.uri;
 	const venv = joinPath(root, '.venv');
-	const venvConfig = joinPath(venv, 'pyvenv.cfg');
 	if (root.fsPath.includes('${')) {
 		notifications.warn(localize('pythonEnvironmentInvalidPath', "Choose a folder path without terminal variable expressions."));
 		return;
@@ -94,8 +94,8 @@ async function manageEnvironment(accessor: ServicesAccessor, install: boolean): 
 	let args: string[];
 	let detail: string;
 	if (install) {
-		executable = isWindows ? joinPath(venv, 'Scripts', 'python.exe') : joinPath(venv, 'bin', 'python');
-		if (!await files.exists(venvConfig) || !await files.exists(executable)) {
+		executable = await findWorkspacePython(root, files);
+		if (!executable) {
 			notifications.info(localize('pythonEnvironmentMissing', "Create a Python virtual environment in this folder first."));
 			return;
 		}
