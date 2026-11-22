@@ -9,6 +9,7 @@ export interface LessonFrame {
 	variables: { name: string; value: string; reference?: number }[];
 	/** Local Python frames, innermost first. Only populated for recorded runs. */
 	stack?: { name: string; line: number }[];
+	result?: { kind: 'return' | 'yield'; value: string };
 	output?: string;
 }
 

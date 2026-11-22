@@ -103,6 +103,13 @@ export function renderLessonTrace(parent: HTMLElement, code: string, frames: rea
 		} else {
 			dom.append(state, dom.$('p', undefined, localize('traceNoVariables', "No variables recorded.")));
 		}
+		if (frame.result) {
+			const result = dom.append(state, dom.$('p'));
+			dom.append(result, dom.$('strong', undefined, frame.result.kind === 'return'
+				? localize('recordedReturnedValue', "Returned value")
+				: localize('recordedYieldedValue', "Yielded value")));
+			dom.append(result, dom.$('code.tmc-variable-change', undefined, frame.result.value));
+		}
 		if (frame.output !== undefined) {
 			dom.append(state, dom.$('h4', undefined, localize('traceOutput', "Output")));
 			dom.append(state, dom.$('pre.tmc-text', undefined, frame.output));

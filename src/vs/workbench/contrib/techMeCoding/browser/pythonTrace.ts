@@ -6,6 +6,7 @@
 // The learner's file is passed as a separate argument. Keep the executable trace
 // helper fixed, and use Python's normal process permissions and terminal streams.
 export const pythonTraceScript = String.raw`
+import dis
 import itertools
 import json
 import os
@@ -64,6 +65,12 @@ def display_value(value, depth=0):
         return start + preview + end
     return "<object>"
 
+def safe_preview(value):
+    try:
+        return display_value(value)[:100]
+    except RuntimeError:
+        return "<value changed during capture>"
+
 def trace_message(message):
     try:
         print(message, file=stderr)
@@ -81,11 +88,7 @@ def trace_frame(frame, event, argument):
     for name, value in frame.f_locals.items():
         if type(name) is not str or name.startswith("__"):
             continue
-        try:
-            preview = display_value(value)
-        except RuntimeError:
-            preview = "<value changed during capture>"
-        item = {"name": name[:40], "value": preview[:100]}
+        item = {"name": name[:40], "value": safe_preview(value)}
         if not any(type(value) is builtin for builtin in (bool, int, float, str, type(None))):
             item["reference"] = objects.setdefault(id(value), len(objects) + 1)
         variables.append(item)
@@ -102,6 +105,12 @@ def trace_frame(frame, event, argument):
         state = {"line": frame.f_lineno, "event": event, "variables": variables, "stack": stack}
         if event == "exception":
             state["exception"] = type.__getattribute__(argument[0], "__name__")[:40]
+        if event == "return" and frame.f_lasti >= 0:
+            opcode = dis.opname[frame.f_code.co_code[frame.f_lasti]]
+            if opcode in ("RETURN_VALUE", "RETURN_CONST"):
+                state["result"] = {"kind": "return", "value": safe_preview(argument)}
+            elif opcode in ("YIELD_VALUE", "YIELD_FROM"):
+                state["result"] = {"kind": "yield", "value": safe_preview(argument)}
         frames.append(state)
     rendered = ", ".join(item["name"] + " = " + item["value"] for item in variables)
     message = f"[TMC] {location} {frame.f_lineno}: " + (rendered or "(no variables)")

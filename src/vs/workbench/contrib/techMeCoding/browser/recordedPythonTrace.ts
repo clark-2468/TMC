@@ -14,7 +14,7 @@ export function readRecordedTrace(value: unknown, fileName: string): Lesson | un
 	const lineCount = value.source.split(/\r\n|\r|\n/).length;
 	const frames: LessonFrame[] = [];
 	for (const frame of value.frames) {
-		if (!isLessonRecord(frame, ['line', 'event', 'variables', 'stack', 'exception']) || typeof frame.line !== 'number' || !Number.isInteger(frame.line) || frame.line < 1 || frame.line > lineCount ||
+		if (!isLessonRecord(frame, ['line', 'event', 'variables', 'stack', 'exception', 'result']) || typeof frame.line !== 'number' || !Number.isInteger(frame.line) || frame.line < 1 || frame.line > lineCount ||
 			(frame.event !== 'line' && frame.event !== 'return' && frame.event !== 'call' && frame.event !== 'exception') || !Array.isArray(frame.variables) || frame.variables.length > 12) {
 			return;
 		}
@@ -62,7 +62,16 @@ export function readRecordedTrace(value: unknown, fileName: string): Lesson | un
 			default:
 				caption = localize('recordedBeforeLine', "Python is about to run this line. The variables show their values before it runs.");
 		}
-		frames.push({ line: frame.line, variables, caption, stack: stack.length ? stack : undefined });
+		let result: LessonFrame['result'];
+		if (frame.result !== undefined) {
+			if (frame.event !== 'return' || !isLessonRecord(frame.result, ['kind', 'value']) ||
+				(frame.result.kind !== 'return' && frame.result.kind !== 'yield') ||
+				typeof frame.result.value !== 'string' || frame.result.value.length > 200) {
+				return;
+			}
+			result = { kind: frame.result.kind, value: frame.result.value };
+		}
+		frames.push({ line: frame.line, variables, caption, stack: stack.length ? stack : undefined, result });
 	}
 	return {
 		version: 1,

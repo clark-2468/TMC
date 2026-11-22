@@ -53,7 +53,7 @@ To create a lesson in the app, run **TechMeCoding: Generate Python Lesson** from
 
 When a trace finishes, TMC also opens a playback tab for files up to 20,000 characters when at least one frame was recorded. Playback uses the saved source read by the trace runner. The terminal retains the programme's output and errors.
 
-Recorded playback shows up to eight calls from the current file, starting with the innermost call. An exception frame shows where Python raised an exception, including exceptions the programme handles. Lists, tuples, sets and dictionaries show a bounded sample of their contents. Matching **Shared object** labels mean that two names refer to the same object in that frame. Labels are local to the frame.
+Recorded playback shows up to eight calls from the current file, starting with the innermost call. Return and yield frames can show the value Python passed back. An exception frame shows where Python raised an exception, including exceptions the programme handles. Lists, tuples, sets and dictionaries show a bounded sample of their contents. Matching **Shared object** labels mean that two names refer to the same object in that frame. Labels are local to the frame.
 
 ## Set up Python for a project
 
