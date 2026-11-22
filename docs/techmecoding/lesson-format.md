@@ -31,7 +31,7 @@ Show the code beside the state it produces. Start paused. Give the learner **Pre
 - **Functions** show the argument-to-parameter assignment, the local values used, and the result flowing back into the caller. Explain each transition in the caption. Scoped call-stack data can be added in a later format version.
 - **Output** shows the cumulative text so learners can compare it with what they see when they run the example themselves.
 
-Version 1 stores illustrative frames supplied by the lesson author. Learning Mode plays these frames beside the original example and highlights the corresponding line. Live Python tracing is a separate implementation step.
+Version 1 stores illustrative frames supplied by the lesson author. Learning Mode plays these frames beside the original example and highlights the corresponding line. Use the desktop trace command below to inspect the execution of a saved file.
 
 ## Run a Python draft on desktop
 
@@ -42,3 +42,5 @@ Version 1 stores illustrative frames supplied by the lesson author. Learning Mod
 5. Review the file and interpreter paths, then confirm. The integrated terminal shows the programme's output and errors, and stays open after it exits.
 
 The command requires a trusted workspace and a local desktop window. Trace playback in a lesson continues to show the recorded example, while terminal output comes from the saved file.
+
+For a live terminal trace, choose **TechMeCoding: Trace Saved Python File**. It reports which line is about to run and the local variables visible at that point. The trace covers the selected file and shows up to 200 events. The programme keeps running if it reaches that limit. Samples of strings are shortened, and collections are summarised by size.
