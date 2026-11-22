@@ -54,3 +54,12 @@ To create a lesson in the app, run **TechMeCoding: Generate Python Lesson** from
 When a trace finishes, TMC also opens a playback tab for files up to 20,000 characters when at least one frame was recorded. Playback uses the saved source read by the trace runner. The terminal retains the programme's output and errors.
 
 Recorded playback shows up to eight calls from the current file, starting with the innermost call. An exception frame shows where Python raised an exception, including exceptions the programme handles. Lists, tuples, sets and dictionaries show a bounded sample of their contents. Matching **Shared object** labels mean that two names refer to the same object in that frame. Labels are local to the frame.
+
+## Set up Python for a project
+
+1. Install Python separately and open a trusted, local project folder in the desktop app.
+2. From the Command Palette, choose **TechMeCoding: Create Python Virtual Environment**. Select an installed Python interpreter and confirm. This creates a `.venv` directory in the project. The terminal shows whether setup succeeded.
+3. To add a dependency, choose **TechMeCoding: Install Package in Python Virtual Environment**. Enter its package name, review the confirmation, then check pip’s output in the terminal.
+4. When running a lesson draft, choose that environment’s interpreter. On Windows it is `.venv\Scripts\python.exe`. On macOS or Linux it is `.venv/bin/python`.
+
+Use the same interpreter for all files in the project. The files you save and the packages you install belong to that project’s workflow.
