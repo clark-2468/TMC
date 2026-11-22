@@ -3,14 +3,14 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-interface LessonFrame {
+export interface LessonFrame {
 	line: number;
 	caption: string;
 	variables: { name: string; value: string }[];
 	output?: string;
 }
 
-interface LessonStep {
+export interface LessonStep {
 	title: string;
 	instruction: string;
 	check: string;
@@ -18,7 +18,7 @@ interface LessonStep {
 	animation?: { kind: 'variables' | 'loop' | 'function'; frames: LessonFrame[] };
 }
 
-interface Lesson {
+export interface Lesson {
 	version: 1;
 	title: string;
 	objective: string;

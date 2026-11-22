@@ -7,12 +7,21 @@ import { extname } from '../../../../base/common/resources.js';
 import { localize, localize2 } from '../../../../nls.js';
 import { Action2, MenuId, registerAction2 } from '../../../../platform/actions/common/actions.js';
 import { IFileDialogService } from '../../../../platform/dialogs/common/dialogs.js';
+import { SyncDescriptor } from '../../../../platform/instantiation/common/descriptors.js';
 import { ServicesAccessor } from '../../../../platform/instantiation/common/instantiation.js';
 import { INotificationService } from '../../../../platform/notification/common/notification.js';
-import { DEFAULT_EDITOR_ASSOCIATION } from '../../../common/editor.js';
+import { Registry } from '../../../../platform/registry/common/platform.js';
+import { EditorPaneDescriptor, IEditorPaneRegistry } from '../../../browser/editor.js';
+import { DEFAULT_EDITOR_ASSOCIATION, EditorExtensions } from '../../../common/editor.js';
 import { IEditorService } from '../../../services/editor/common/editorService.js';
 import { ITextFileService } from '../../../services/textfile/common/textfiles.js';
 import { parseLesson } from './lesson.js';
+import { LessonEditor, LessonEditorInput } from './lessonEditor.js';
+
+Registry.as<IEditorPaneRegistry>(EditorExtensions.EditorPane).registerEditorPane(
+	EditorPaneDescriptor.create(LessonEditor, LessonEditor.ID, localize('learningMode', "TechMeCoding Learning Mode")),
+	[new SyncDescriptor(LessonEditorInput)]
+);
 
 const instructionFileExtensions = ['json', 'md', 'markdown', 'txt'];
 
@@ -77,24 +86,7 @@ registerAction2(class extends Action2 {
 				return;
 			}
 
-			const { title, objective, steps } = result.lesson;
-			const sections = steps.map((step, index) => {
-				const code = step.code ? `\n\n${step.code}` : '';
-				const trace = step.animation?.frames.map(frame => {
-					const variables = frame.variables.map(({ name, value }) => `${name} = ${value}`).join(', ');
-					const line = localize('lessonTraceLine', "Line {0}", frame.line);
-					const output = frame.output ? localize('lessonTraceOutput', "Output: {0}", frame.output) : '';
-					return [`${line} — ${frame.caption}`, variables, output].filter(Boolean).join('\n');
-				}).join('\n\n');
-				const check = localize('lessonCheck', "Check");
-				return [`${index + 1}. ${step.title}\n\n${step.instruction}${code}`, trace, `${check}\n${step.check}`].filter(Boolean).join('\n\n');
-			});
-			await editorService.openEditor({
-				resource: undefined,
-				contents: [title, objective, ...sections].join('\n\n'),
-				languageId: 'plaintext',
-				options: { pinned: true }
-			});
+			await editorService.openEditor(new LessonEditorInput(result.lesson), { pinned: true });
 			return;
 		}
 

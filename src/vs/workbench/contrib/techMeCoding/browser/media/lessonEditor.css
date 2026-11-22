@@ -1,0 +1,57 @@
+.tmc-lesson {
+	box-sizing: border-box;
+	overflow: auto;
+	padding: 24px clamp(16px, 4vw, 48px);
+	color: var(--vscode-editor-foreground);
+	background: var(--vscode-editor-background);
+	font-size: 14px;
+	line-height: 1.55;
+}
+
+.tmc-lesson .tmc-navigation {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 12px;
+	margin: 20px 0;
+}
+
+.tmc-lesson button {
+	padding: 5px 12px;
+	color: var(--vscode-button-foreground);
+	background: var(--vscode-button-background);
+	border: 1px solid var(--vscode-button-border, transparent);
+	border-radius: 3px;
+	cursor: pointer;
+}
+
+.tmc-lesson button:hover:not(:disabled) {
+	background: var(--vscode-button-hoverBackground);
+}
+
+.tmc-lesson button:disabled {
+	opacity: 0.65;
+	cursor: default;
+}
+
+.tmc-lesson button:focus-visible,
+.tmc-lesson h2:focus-visible {
+	outline: 2px solid var(--vscode-focusBorder);
+	outline-offset: 2px;
+}
+
+.tmc-lesson .tmc-columns {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
+	gap: 24px;
+}
+
+.tmc-lesson .tmc-text {
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+.tmc-lesson .tmc-code {
+	height: 280px;
+	border: 1px solid var(--vscode-editorWidget-border, var(--vscode-widget-border, transparent));
+}

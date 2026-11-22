@@ -1,6 +1,6 @@
 # TechMeCoding lesson format v1
 
-Save the lesson as UTF-8 JSON, for example `python-variables.tmc.json`. Open it with **File → Import Instructions…**. The importer validates the file and displays a separate plain-text lesson in the editor.
+Save the lesson as UTF-8 JSON, for example `python-variables.tmc.json`. Open it with **File → Import Instructions…**. The importer validates the file and opens it in Learning Mode with step navigation, checks and editable Python drafts.
 
 ## Prompt to give GPT
 
