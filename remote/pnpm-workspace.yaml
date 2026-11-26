@@ -39,6 +39,7 @@ allowBuilds:
   node-pty@1.2.0-beta.18: true
   ssh2: false
 overrides:
+  undici@7: 7.30.1
   node-gyp-build: 4.8.1
   kerberos@2.1.1>node-addon-api: 7.1.0
   koffi: 3.2.1

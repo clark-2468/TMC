@@ -109,7 +109,7 @@ async function manageEnvironment(accessor: ServicesAccessor, install: boolean): 
 		if (!name || !validName(name)) {
 			return;
 		}
-		args = ['-m', 'pip', '--isolated', '--require-virtualenv', 'install', name];
+		args = ['-I', '-m', 'pip', '--isolated', '--require-virtualenv', 'install', name];
 		detail = localize('pythonInstallPackageDetail', "Package: {0}\nInterpreter: {1}\n\nPip may download the package and execute build code. Confirm that you trust the package.", name, executable.fsPath);
 	} else {
 		if (await files.exists(venv)) {
@@ -125,7 +125,7 @@ async function manageEnvironment(accessor: ServicesAccessor, install: boolean): 
 		if (!executable || executable.scheme !== Schemas.file || executable.fsPath.includes('${')) {
 			return;
 		}
-		args = ['-m', 'venv', venv.fsPath];
+		args = ['-I', '-m', 'venv', venv.fsPath];
 		detail = localize('pythonCreateEnvironmentDetail', "Environment: {0}\nInterpreter: {1}\n\nA virtual environment keeps this project’s packages separate from other projects.", venv.fsPath, executable.fsPath);
 	}
 

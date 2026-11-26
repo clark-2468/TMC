@@ -11,7 +11,6 @@ use std::fs::{self, File};
 use std::io;
 use std::path::Path;
 use std::path::PathBuf;
-use zip::read::ZipFile;
 use zip::{self, ZipArchive};
 
 // Borrowed and modified from https://github.com/zip-rs/zip/blob/master/examples/extract.rs
@@ -19,19 +18,13 @@ use zip::{self, ZipArchive};
 /// Returns whether all files in the archive start with the same path segment.
 /// If so, it's an indication we should skip that segment when extracting.
 fn should_skip_first_segment(archive: &mut ZipArchive<File>) -> bool {
-	let first_name = {
-		let file = archive
-			.by_index_raw(0)
-			.expect("expected not to have an empty archive");
-
-		let path = file
-			.enclosed_name()
-			.expect("expected to have path")
-			.iter()
-			.next()
-			.expect("expected to have non-empty name");
-
-		path.to_owned()
+	let Some(first_name) = archive
+		.by_index_raw(0)
+		.ok()
+		.and_then(|file| file.enclosed_name())
+		.and_then(|path| path.iter().next().map(|name| name.to_owned()))
+	else {
+		return false;
 	};
 
 	for i in 1..archive.len() {
@@ -74,9 +67,7 @@ where
 				// their single segment has been stripped. Only directory entries
 				// are skipped; non-directory entries with an empty relative path
 				// fall through to `safe_extract_join`, which rejects them.
-				if relative.as_os_str().is_empty()
-					&& (file.is_dir() || file.name().ends_with('/'))
-				{
+				if relative.as_os_str().is_empty() && file.is_dir() {
 					continue;
 				}
 				safe_extract_join(&canonical_root, &relative)?
@@ -84,11 +75,11 @@ where
 			None => continue,
 		};
 
-		if file.is_dir() || file.name().ends_with('/') {
+		if file.is_dir() {
 			fs::create_dir_all(&outpath)
 				.map_err(|e| wrap(e, format!("could not create dir for {}", outpath.display())))?;
 			ensure_canonical_within_root(&canonical_root, &outpath)?;
-			apply_permissions(&file, &outpath)?;
+			apply_permissions(file.unix_mode(), &outpath)?;
 			continue;
 		}
 
@@ -101,25 +92,31 @@ where
 		#[cfg(unix)]
 		{
 			use super::extract_safety::validate_symlink_target;
-			use libc::S_IFLNK;
 			use std::io::Read;
 			use std::os::unix::ffi::OsStringExt;
 
-			#[cfg(target_os = "macos")]
-			const S_IFLINK_32: u32 = S_IFLNK as u32;
-
-			#[cfg(target_os = "linux")]
-			const S_IFLINK_32: u32 = S_IFLNK;
-
-			if matches!(file.unix_mode(), Some(mode) if mode & S_IFLINK_32 == S_IFLINK_32) {
+			if file.is_symlink() {
+				const MAX_LINK_BYTES: usize = 4096;
 				let mut link_to = Vec::new();
-				file.read_to_end(&mut link_to).map_err(|e| {
-					wrap(
-						e,
-						format!("could not read symlink linkpath {}", outpath.display()),
-					)
-				})?;
+				file.by_ref()
+					.take((MAX_LINK_BYTES + 1) as u64)
+					.read_to_end(&mut link_to)
+					.map_err(|e| {
+						wrap(
+							e,
+							format!("could not read symlink linkpath {}", outpath.display()),
+						)
+					})?;
 
+				if link_to.len() > MAX_LINK_BYTES {
+					return Err(wrap(
+						io::Error::new(
+							io::ErrorKind::InvalidData,
+							"symlink target exceeds 4096 bytes",
+						),
+						"invalid zip symlink",
+					));
+				}
 				let link_path = PathBuf::from(std::ffi::OsString::from_vec(link_to));
 				validate_symlink_target(&canonical_root, &outpath, &link_path)?;
 				std::os::unix::fs::symlink(link_path, &outpath).map_err(|e| {
@@ -135,7 +132,7 @@ where
 				format!(
 					"unable to open file to write {} (from {:?})",
 					outpath.display(),
-					file.enclosed_name().map(|p| p.to_string_lossy()),
+					file.enclosed_name(),
 				),
 			)
 		})?;
@@ -143,7 +140,7 @@ where
 		io::copy(&mut file, &mut outfile)
 			.map_err(|e| wrap(e, format!("error copying file {}", outpath.display())))?;
 
-		apply_permissions(&file, &outpath)?;
+		apply_permissions(file.unix_mode(), &outpath)?;
 	}
 
 	reporter.report_progress(archive.len() as u64, archive.len() as u64);
@@ -152,11 +149,11 @@ where
 }
 
 #[cfg(unix)]
-fn apply_permissions(file: &ZipFile, outpath: &Path) -> Result<(), WrappedError> {
+fn apply_permissions(mode: Option<u32>, outpath: &Path) -> Result<(), WrappedError> {
 	use std::os::unix::fs::PermissionsExt;
 
-	if let Some(mode) = file.unix_mode() {
-		fs::set_permissions(outpath, fs::Permissions::from_mode(mode)).map_err(|e| {
+	if let Some(mode) = mode {
+		fs::set_permissions(outpath, fs::Permissions::from_mode(mode & 0o777)).map_err(|e| {
 			wrap(
 				e,
 				format!("error setting permissions on {}", outpath.display()),
@@ -168,6 +165,47 @@ fn apply_permissions(file: &ZipFile, outpath: &Path) -> Result<(), WrappedError>
 }
 
 #[cfg(windows)]
-fn apply_permissions(_file: &ZipFile, _outpath: &Path) -> Result<(), WrappedError> {
+fn apply_permissions(_mode: Option<u32>, _outpath: &Path) -> Result<(), WrappedError> {
 	Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use crate::util::io::SilentCopyProgress;
+	use std::io::Write;
+	use zip::write::SimpleFileOptions;
+
+	#[test]
+	fn extracts_files_with_a_shared_top_level_folder() {
+		let mut archive = zip::ZipWriter::new(tempfile::tempfile().unwrap());
+		for name in ["example/lesson.txt", "example/readme.txt"] {
+			archive
+				.start_file(name, SimpleFileOptions::default())
+				.unwrap();
+			archive.write_all(b"hello").unwrap();
+		}
+		let destination = tempfile::tempdir().unwrap();
+		unzip_file(
+			archive.finish().unwrap(),
+			destination.path(),
+			SilentCopyProgress(),
+		)
+		.unwrap();
+		for name in ["lesson.txt", "readme.txt"] {
+			assert_eq!(fs::read(destination.path().join(name)).unwrap(), b"hello");
+		}
+	}
+
+	#[cfg(unix)]
+	#[test]
+	fn restores_only_ordinary_permission_bits() {
+		use std::os::unix::fs::PermissionsExt;
+		let file = tempfile::NamedTempFile::new().unwrap();
+		apply_permissions(Some(0o6750), file.path()).unwrap();
+		assert_eq!(
+			file.as_file().metadata().unwrap().permissions().mode() & 0o7777,
+			0o750
+		);
+	}
 }
