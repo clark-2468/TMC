@@ -7,7 +7,7 @@ This document defines the product vision, development requirements and roadmap.
 - **Foundation** — Microsoft Code - OSS
 - **Primary platform** — Windows desktop application
 - **Primary programming language taught** — Python
-- **Development branch** — `tmc-development`
+- **Development branch** — `main`
 
 ---
 

@@ -3,7 +3,7 @@ name: TMC Windows development build
 on:
   workflow_dispatch:
   push:
-    branches: [tmc-development]
+    branches: [main]
     paths:
       - '.github/workflows/tmc-windows-build.yml'
       - 'scripts/package-tmc-portable.ps1'
