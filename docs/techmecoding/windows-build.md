@@ -5,11 +5,12 @@ From a Windows x64 checkout, install the Code - OSS development prerequisites, i
 ```powershell
 pnpm install --frozen-lockfile
 pnpm run gulp vscode-win32-x64
+./scripts/package-tmc-portable.ps1 -OutputDirectory $PWD
 ```
 
-The build produces a `VSCode-win32-x64` directory next to the checkout. Run `TechMeCoding.exe` from that directory and use **TechMeCoding: Import Instructions…** to open one of the example lessons in the repository. An installed local Python interpreter is required for the **Run Saved Python File** and **Trace Saved Python File** commands.
+Extract the entire portable ZIP to a writable folder and double-click `TechMeCoding.exe`. No installation or administrator privileges are required. Keep the adjacent `data` directory with the application. Portable mode stores settings and profiles under `data/user-data` and user-installed extensions under `data/extensions`. Use **TechMeCoding: Import Instructions…** to open a file from `TMC-Lessons`. The IDE includes Electron and its runtime dependencies. Running or tracing Python programmes uses a separately installed interpreter of your choice.
 
-The **TMC Windows development build** GitHub Actions workflow packages the same target and runs its CLI to verify the build commit and architecture. Once the workflow is available on the default branch, select the development branch when dispatching it. Download the archive named `TMC-win32-x64-<commit>`, extract it, and open `TechMeCoding.exe`. The archive includes sample lessons under `TMC-Lessons` and is intended for development testing.
+The **TMC Windows development build** workflow runs on packaging changes pushed to `tmc-development`. Open the workflow run and download **TechMeCoding-portable-win32-x64** under **Artifacts**. The separate **TechMeCoding-source** ZIP contains the complete tracked tree for the same commit. Building from an extracted source archive requires initialising a local Git checkout for the upstream build scripts. In the extracted project root, run `git init`, `git add -A` and `git commit -m "Import TMC source snapshot"` before the build commands above. Configure a local Git identity if needed. Such a build reports the new local commit.
 
 ## Check the archive on Windows
 

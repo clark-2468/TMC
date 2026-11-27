@@ -2,11 +2,33 @@ name: TMC Windows development build
 
 on:
   workflow_dispatch:
+  push:
+    branches: [tmc-development]
+    paths:
+      - '.github/workflows/tmc-windows-build.yml'
+      - 'scripts/package-tmc-portable.ps1'
 
 permissions:
   contents: read
 
 jobs:
+  source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Export complete source tree
+        run: |
+          archive="$RUNNER_TEMP/TechMeCoding-source-${GITHUB_SHA:0:12}.zip"
+          git archive --format=zip --prefix=TechMeCoding/ -o "$archive" HEAD
+          unzip -tq "$archive"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          path: ${{ runner.temp }}/TechMeCoding-source-*.zip
+          archive: false
+          if-no-files-found: error
+
   windows-x64:
     runs-on: windows-2025
     timeout-minutes: 120
@@ -41,29 +63,13 @@ jobs:
       - name: Package the Windows x64 desktop application
         run: pnpm run gulp vscode-win32-x64
 
-      - name: Smoke-test package and include example lessons
+      - name: Create and test the portable ZIP
         shell: pwsh
-        run: |
-          $package = Join-Path (Split-Path $env:GITHUB_WORKSPACE -Parent) 'VSCode-win32-x64'
-          $product = Get-Content -LiteralPath product.json -Raw | ConvertFrom-Json
-          if (-not (Test-Path -LiteralPath (Join-Path $package ($product.nameShort + '.exe')) -PathType Leaf)) {
-            throw 'The desktop executable is missing.'
-          }
-          $cli = Join-Path $package ('bin/' + $product.applicationName + '.cmd')
-          $versionInfo = & $cli --version
-          if ($LASTEXITCODE -ne 0 -or $env:GITHUB_SHA -notin $versionInfo -or 'x64' -notin $versionInfo) {
-            throw "Unexpected package version information: $versionInfo"
-          }
-          $lessonFolder = Join-Path $package 'TMC-Lessons'
-          New-Item -ItemType Directory -Path $lessonFolder -Force | Out-Null
-          Copy-Item -LiteralPath 'docs/techmecoding/lesson-format.md' -Destination $lessonFolder
-          Get-ChildItem -Path 'docs/techmecoding' -Filter '*.tmc.json' |
-            Copy-Item -Destination $lessonFolder
+        run: ./scripts/package-tmc-portable.ps1
 
-      - name: Upload the development archive
+      - name: Upload portable ZIP
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: TMC-win32-x64-${{ github.sha }}
-          path: ../VSCode-win32-x64/
-          include-hidden-files: true
+          path: ${{ runner.temp }}/TechMeCoding-portable-win32-x64-*.zip
+          archive: false
           if-no-files-found: error
