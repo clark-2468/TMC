@@ -1,0 +1,113 @@
+name: TMC macOS Apple Silicon installer
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/tmc-macos-installer.yml']
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  installer:
+    runs-on: macos-15
+    outputs:
+      app_commit: ${{ steps.source.outputs.commit }}
+      artifact_id: ${{ steps.upload.outputs.artifact-id }}
+      digest: ${{ steps.upload.outputs.artifact-digest }}
+    steps:
+      - name: Download verified Apple Silicon build
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          repo="$GITHUB_REPOSITORY"
+          run=$(gh run list --repo "$repo" --workflow tmc-macos-build.yml --branch main --status success --limit 1 --json databaseId,headSha --jq '.[0]')
+          commit=$(jq -er '.headSha' <<< "$run")
+          run_id=$(jq -er '.databaseId' <<< "$run")
+          name="TechMeCoding-macOS-arm64-${commit:0:12}.zip"
+          artifact=$(gh api "repos/$repo/actions/runs/$run_id/artifacts" |
+            jq -er --arg name "$name" '.artifacts[] | select(.name == $name and .expired == false)')
+          gh api "repos/$repo/actions/artifacts/$(jq -r .id <<< "$artifact")/zip" > "$RUNNER_TEMP/build.zip"
+          digest=$(jq -er '.digest | sub("^sha256:";"")' <<< "$artifact")
+          echo "$digest  $RUNNER_TEMP/build.zip" | shasum -a 256 -c -
+          ditto -x -k "$RUNNER_TEMP/build.zip" "$RUNNER_TEMP/payload"
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+
+      - name: Create single current-user installer
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          # Treat the entire tree as one payload to prevent relocation of bundled Electron helpers.
+          echo '<plist version="1.0"><array/></plist>' > components.plist
+          pkgbuild --root payload --component-plist components.plist --ownership preserve \
+            --install-location Applications --identifier io.github.clark-2468.tmc.arm64 \
+            --version "1.$GITHUB_RUN_NUMBER.$GITHUB_RUN_ATTEMPT" TMC-component.pkg
+          cat > distribution.xml <<'XML'
+          <installer-gui-script minSpecVersion="2">
+            <title>TechMeCoding for Apple Silicon</title>
+            <options customize="never" hostArchitectures="arm64"/>
+            <domains enable_anywhere="false" enable_currentUserHome="true" enable_localSystem="false"/>
+            <choices-outline><line choice="tmc"/></choices-outline>
+            <choice id="tmc" visible="false"><pkg-ref id="io.github.clark-2468.tmc.arm64"/></choice>
+            <pkg-ref id="io.github.clark-2468.tmc.arm64">TMC-component.pkg</pkg-ref>
+          </installer-gui-script>
+          XML
+          productbuild --distribution distribution.xml --package-path . TechMeCoding-macOS-arm64.pkg
+
+      - name: Install and launch as the current user
+        env:
+          APP_COMMIT: ${{ steps.source.outputs.commit }}
+        run: |
+          set -euo pipefail
+          installer -pkg "$RUNNER_TEMP/TechMeCoding-macOS-arm64.pkg" -target CurrentUserHomeDirectory
+          folder="$HOME/Applications/TechMeCoding"
+          app="$folder/TechMeCoding.app"
+          codesign --verify --deep --strict "$app"
+          version=$("$app/Contents/Resources/app/bin/code" --version)
+          grep -Fx "$APP_COMMIT" <<< "$version"
+          grep -Fx arm64 <<< "$version"
+          test -f "$folder/TMC-Lessons/variables-and-loop.tmc.json"
+          binary=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$app/Contents/Info.plist")
+          "$app/Contents/MacOS/$binary" --disable-extensions --new-window &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for attempt in {1..90}; do
+            kill -0 "$pid"
+            if compgen -G "$folder/code-oss-portable-data/user-data/logs/*/main.log" >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          exit 1
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        id: upload
+        with:
+          path: ${{ runner.temp }}/TechMeCoding-macOS-arm64.pkg
+          archive: false
+          if-no-files-found: error
+
+  publish:
+    needs: installer
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - name: Publish tested installer on GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APP_COMMIT: ${{ needs.installer.outputs.app_commit }}
+          ARTIFACT_ID: ${{ needs.installer.outputs.artifact_id }}
+          DIGEST: ${{ needs.installer.outputs.digest }}
+        run: |
+          set -euo pipefail
+          pkg=TechMeCoding-macOS-arm64.pkg
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID/zip" > "$pkg"
+          echo "${DIGEST#sha256:}  $pkg" | sha256sum -c -
+          tag="macos-installer-$GITHUB_RUN_NUMBER-$GITHUB_RUN_ATTEMPT"
+          gh release create "$tag" "$pkg" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --prerelease \
+            --title "TechMeCoding for Apple Silicon (development installer $GITHUB_RUN_NUMBER)" \
+            --notes "Installs TechMeCoding and sample lessons in ~/Applications/TechMeCoding for the current user. Application commit: $APP_COMMIT. Development build with an ad-hoc-signed app and an unsigned installer. Apple notarisation has not been performed."
