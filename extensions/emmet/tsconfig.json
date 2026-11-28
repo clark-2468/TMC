@@ -2,6 +2,7 @@
 	"extends": "../tsconfig.base.json",
 	"compilerOptions": {
 		"rootDir": "./src",
+		"module": "Node16",
 		"outDir": "./out",
 		"types": [
 			"node"

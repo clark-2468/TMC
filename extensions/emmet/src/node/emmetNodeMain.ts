@@ -11,7 +11,7 @@ import { setHomeDir } from '../util';
 
 export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand('editor.emmet.action.updateImageSize', () => {
-		return import('../updateImageSize').then(uis => uis.updateImageSize());
+		return import('../updateImageSize.js').then(uis => uis.updateImageSize());
 	}));
 
 	setHomeDir(vscode.Uri.file(homedir()));
