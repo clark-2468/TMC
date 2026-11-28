@@ -529,7 +529,10 @@ export async function getCompletionItemsFromSpecs(
 		for (const command of availableCommands) {
 			const commandTextLabel = typeof command.label === 'string' ? command.label : command.label.label;
 			// Remove any file extension for matching on Windows
-			const labelWithoutExtension = isWindows ? commandTextLabel.replace(/\.[^ ]+$/, '') : commandTextLabel;
+			const trailingSegment = commandTextLabel.lastIndexOf(' ') + 1;
+			const dot = commandTextLabel.indexOf('.', trailingSegment);
+			const hasExtension = dot !== -1 && dot < commandTextLabel.length - 1;
+			const labelWithoutExtension = isWindows && hasExtension ? commandTextLabel.slice(0, dot) : commandTextLabel;
 			if (!labels.has(labelWithoutExtension)) {
 				items.push(createCompletionItem(
 					terminalContext.cursorIndex,

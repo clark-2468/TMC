@@ -59,12 +59,12 @@ export function handleANSIOutput(text: string, linkOptions: LinkOptions): HTMLSp
 				 * Certain ranges that are matched here do not contain real graphics rendition sequences. For
 				 * the sake of having a simpler expression, they have been included anyway.
 				 */
-				if (ansiSequence.match(/^(?:[34][0-8]|9[0-7]|10[0-7]|[0-9]|2[1-5,7-9]|[34]9|5[8,9]|1[0-9])(?:;[349][0-7]|10[0-7]|[013]|[245]|[34]9)?(?:;[012]?[0-9]?[0-9])*;?m$/)) {
+				const parameters = ansiSequence.slice(0, -1).split(';');
+				if (ansiSequence.endsWith('m')
+					&& /^(?:[34][0-8]|9[0-7]|10[0-7]|[0-9]|2[1-5,7-9]|[34]9|5[8,9]|1[0-9])$/.test(parameters[0])
+					&& parameters.slice(1).every(parameter => /^[012]?[0-9]?[0-9]$/.test(parameter))) {
 
-					const styleCodes: number[] = ansiSequence.slice(0, -1) // Remove final 'm' character.
-						.split(';')										   // Separate style codes.
-						.filter(elem => elem !== '')			           // Filter empty elems as '34;m' -> ['34', ''].
-						.map(elem => parseInt(elem, 10));		           // Convert to numbers.
+					const styleCodes = parameters.filter(parameter => parameter !== '').map(parameter => parseInt(parameter, 10));
 
 					if (styleCodes[0] === 38 || styleCodes[0] === 48 || styleCodes[0] === 58) {
 						// Advanced color code - can't be combined with formatting codes like simple colors can
