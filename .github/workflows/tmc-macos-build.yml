@@ -46,7 +46,7 @@ jobs:
           app="$folder/TechMeCoding.app"
           codesign --verify --deep --strict "$app"
           binary="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$app/Contents/Info.plist")"
-          lipo -verify_arch arm64 "$app/Contents/MacOS/$binary"
+          lipo "$app/Contents/MacOS/$binary" -verify_arch arm64
           version="$("$app/Contents/Resources/app/bin/code" --version)"
           grep -Fx "$GITHUB_SHA" <<< "$version"
           grep -Fx arm64 <<< "$version"
