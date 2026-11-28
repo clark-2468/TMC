@@ -568,7 +568,11 @@ function isLoopbackAddress(address: string): boolean {
  * anything this server is not deliberately faking still behaves normally.
  */
 function passthrough(req: IncomingMessage, res: ServerResponse, url: URL): void {
-	const target = new URL(url.pathname + url.search, UPSTREAM);
+	const target = new URL(UPSTREAM);
+	// Assign URL components separately so request paths cannot change the destination origin.
+	target.pathname = url.pathname;
+	target.search = url.search;
+	target.hash = '';
 	const transport = target.protocol === 'http:' ? http : https;
 
 	const headers = { ...req.headers };
