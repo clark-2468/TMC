@@ -1,0 +1,160 @@
+name: TMC cross-platform release
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release label to test (for example v1.0.0)
+        required: true
+        default: v0.0.0-test
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tmc-release-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: false
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - id: check
+        env:
+          TAG: ${{ inputs.version || github.ref_name }}
+        run: |
+          set -eu
+          python - <<'PY'
+          import os, re
+          tag = os.environ['TAG']
+          number = r'(?:0|[1-9][0-9]*)'
+          ident = rf'(?:{number}|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)'
+          if not re.fullmatch(rf'v{number}\.{number}\.{number}(?:-{ident}(?:\.{ident})*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?', tag):
+              raise SystemExit('Use a v-prefixed semantic version')
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              print('version=' + tag[1:], file=f)
+          PY
+
+  build:
+    needs: version
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { runner: windows-2025, target: win32, arch: x64 }
+          - { runner: macos-15, target: darwin, arch: arm64 }
+          - { runner: macos-15-intel, target: darwin, arch: x64 }
+          - { runner: ubuntu-22.04, target: linux, arch: x64 }
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 150
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      ARCH: ${{ matrix.arch }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: .nvmrc
+      - uses: ./.github/actions/setup-pnpm
+      - if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libxkbfile-dev libkrb5-dev libsecret-1-dev libnss3 libasound2 libgbm-dev libxss1 libxtst6 squashfs-tools desktop-file-utils zsync xvfb
+      - if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $tool = Get-ChildItem "${env:ProgramFiles(x86)}/Windows Kits/10/bin/*/x64/signtool.exe" | Sort-Object FullName -Descending | Select-Object -First 1
+          if (!$tool) { throw 'Missing x64 SDK signing tools' }
+          $tool.DirectoryName >> $env:GITHUB_PATH
+      - shell: bash
+        env:
+          TARGET: ${{ matrix.target }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(node -p process.arch)" = "$ARCH"
+          mkdir dist
+          pnpm install --frozen-lockfile
+          node --input-type=module <<'JS'
+          import fs from 'node:fs';
+          import {parseLesson} from './src/vs/workbench/contrib/techMeCoding/browser/lesson.ts';
+          const dir = 'docs/techmecoding';
+          for (const name of fs.readdirSync(dir).filter(n => n.endsWith('.tmc.json'))) {
+            if (!parseLesson(JSON.parse(fs.readFileSync(dir + '/' + name))).valid) throw Error(name);
+          }
+          JS
+          pnpm run gulp "vscode-$TARGET-$ARCH"
+      - if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          PFX_B64: ${{ secrets.TMC_WINDOWS_PFX }}
+          PFX_PASSWORD: ${{ secrets.TMC_WINDOWS_PFX_PASSWORD }}
+        run: ./build/tmc-release/windows.ps1
+      - if: runner.os == 'macOS'
+        env:
+          P12_B64: ${{ secrets.TMC_MAC_P12 }}
+          P12_PASSWORD: ${{ secrets.TMC_MAC_P12_PASSWORD }}
+          IDENTITY: ${{ secrets.TMC_MAC_IDENTITY }}
+          NOTARY_KEY: ${{ secrets.TMC_NOTARY_KEY }}
+          KEY_ID: ${{ secrets.TMC_NOTARY_KEY_ID }}
+          ISSUER: ${{ secrets.TMC_NOTARY_ISSUER }}
+        run: bash build/tmc-release/mac.sh
+      - if: runner.os == 'Linux'
+        run: bash build/tmc-release/linux.sh
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: release-${{ matrix.target }}-${{ matrix.arch }}
+          path: dist/*
+          if-no-files-found: error
+          compression-level: 0
+
+  assemble:
+    needs: [version, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          pattern: release-*
+          merge-multiple: true
+          path: dist
+      - working-directory: dist
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          for suffix in Windows-x64-*-setup.exe Windows-x64-*-portable.zip macOS-arm64-*.dmg macOS-x64-*.dmg Linux-x64-*.AppImage Linux-x64-*.deb; do
+            files=(TechMeCoding-"$VERSION"-$suffix)
+            test "${#files[@]}" -eq 1 && test -s "${files[0]}" || exit 1
+          done
+          test "$(find . -type f | wc -l)" -eq 6
+          sha256sum TechMeCoding-* > SHA256SUMS.txt
+          sha256sum -c SHA256SUMS.txt
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: verified-release
+          path: dist/*
+          compression-level: 0
+
+  draft:
+    if: github.event_name == 'push'
+    needs: assemble
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
+        with:
+          name: verified-release
+          path: dist
+      - working-directory: dist
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sha256sum -c SHA256SUMS.txt
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --verify-tag --draft --generate-notes --title "TechMeCoding $GITHUB_REF_NAME" ./*
