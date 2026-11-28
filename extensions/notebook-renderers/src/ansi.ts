@@ -59,9 +59,9 @@ export function handleANSIOutput(text: string, linkOptions: LinkOptions): HTMLSp
 				 * Certain ranges that are matched here do not contain real graphics rendition sequences. For
 				 * the sake of having a simpler expression, they have been included anyway.
 				 */
-				const parameters = ansiSequence.slice(0, -1).split(';');
+				const parameters = ansiSequence.slice(0, ansiSequence.endsWith(';m') ? -2 : -1).split(';');
 				if (ansiSequence.endsWith('m')
-					&& /^(?:[34][0-8]|9[0-7]|10[0-7]|[0-9]|2[1-5,7-9]|[34]9|5[8,9]|1[0-9])$/.test(parameters[0])
+					&& /^(?:[34][0-8]|9[0-7]|10[0-7]|[0-9]|2[1-5,7-9]|[34]9|5[8,9]|1[0-9])(?:10[0-7]|[013245]|[34]9)?$/.test(parameters[0])
 					&& parameters.slice(1).every(parameter => /^[012]?[0-9]?[0-9]$/.test(parameter))) {
 
 					const styleCodes = parameters.filter(parameter => parameter !== '').map(parameter => parseInt(parameter, 10));
