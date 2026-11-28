@@ -40,7 +40,7 @@ jobs:
 
       - name: Launch and verify extracted application
         run: |
-          test_dir="$(mktemp -d)"
+          test_dir="$(mktemp -d /tmp/tmc.XXXXXX)"
           ditto -x -k "$RUNNER_TEMP/TechMeCoding-macOS-arm64-${GITHUB_SHA:0:12}.zip" "$test_dir"
           folder="$test_dir/TechMeCoding"
           app="$folder/TechMeCoding.app"
