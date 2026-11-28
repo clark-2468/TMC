@@ -24,6 +24,8 @@ jobs:
       - uses: ./.github/actions/setup-pnpm
 
       - name: Build on Apple Silicon
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           test "$(uname -m)" = arm64
           pnpm install --frozen-lockfile
