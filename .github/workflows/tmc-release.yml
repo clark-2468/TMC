@@ -128,7 +128,7 @@ jobs:
         run: |
           set -euo pipefail
           shopt -s nullglob
-          for suffix in Windows-x64-*-setup.exe Windows-x64-*-portable.zip macOS-arm64-*.dmg macOS-x64-*.dmg Linux-x64-*.AppImage Linux-x64-*.deb; do
+          for suffix in 'Windows-x64-*-setup.exe' 'Windows-x64-*-portable.zip' 'macOS-arm64-*.dmg' 'macOS-x64-*.dmg' 'Linux-x64-*.AppImage' 'Linux-x64-*.deb'; do
             files=(TechMeCoding-"$VERSION"-$suffix)
             test "${#files[@]}" -eq 1 && test -s "${files[0]}" || exit 1
           done
