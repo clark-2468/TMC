@@ -1,0 +1,72 @@
+name: TMC macOS Apple Silicon development build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/tmc-macos-build.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  macos-arm64:
+    runs-on: macos-15
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: .nvmrc
+      - uses: ./.github/actions/setup-pnpm
+
+      - name: Build on Apple Silicon
+        run: |
+          test "$(uname -m)" = arm64
+          pnpm install --frozen-lockfile
+          pnpm run gulp vscode-darwin-arm64
+
+      - name: Package application and lessons
+        run: |
+          folder="$RUNNER_TEMP/TechMeCoding"
+          mkdir -p "$folder/TMC-Lessons" "$folder/code-oss-portable-data"
+          mv ../VSCode-darwin-arm64/TechMeCoding.app "$folder/"
+          cp docs/techmecoding/*.tmc.json docs/techmecoding/lesson-format.md "$folder/TMC-Lessons/"
+          codesign --force --deep --sign - "$folder/TechMeCoding.app"
+          ditto -c -k --sequesterRsrc --keepParent "$folder" "$RUNNER_TEMP/TechMeCoding-macOS-arm64-${GITHUB_SHA:0:12}.zip"
+
+      - name: Launch and verify extracted application
+        run: |
+          test_dir="$(mktemp -d)"
+          ditto -x -k "$RUNNER_TEMP/TechMeCoding-macOS-arm64-${GITHUB_SHA:0:12}.zip" "$test_dir"
+          folder="$test_dir/TechMeCoding"
+          app="$folder/TechMeCoding.app"
+          codesign --verify --deep --strict "$app"
+          binary="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$app/Contents/Info.plist")"
+          lipo -verify_arch arm64 "$app/Contents/MacOS/$binary"
+          version="$("$app/Contents/Resources/app/bin/code" --version)"
+          grep -Fx "$GITHUB_SHA" <<< "$version"
+          grep -Fx arm64 <<< "$version"
+          test -f "$folder/TMC-Lessons/variables-and-loop.tmc.json"
+          "$app/Contents/MacOS/$binary" --new-window --disable-extensions &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for attempt in {1..90}; do
+            kill -0 "$pid"
+            if compgen -G "$folder/code-oss-portable-data/user-data/logs/*/main.log" >/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo 'The extracted application did not create its portable startup log.' >&2
+          exit 1
+
+      - name: Publish macOS arm64 ZIP
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          path: ${{ runner.temp }}/TechMeCoding-macOS-arm64-*.zip
+          archive: false
+          if-no-files-found: error
